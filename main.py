@@ -2,10 +2,27 @@ import os
 import discord
 import random
 import psycopg2
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
+
+"""
+Are these needed?
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+from nltk.stem import WordNetLemmatizer
+"""
+
+
+# import nltk
+# nltk.download('all')
 
 """
 To invite this bot into your dicord server, use the link
 https://discord.com/oauth2/authorize?client_id=1348147223426236487&permissions=2147600448&integration_type=0&scope=bot
+
+Article Links:
+https://www.datacamp.com/tutorial/tutorial-postgresql-python
+https://discordpy.readthedocs.io/en/stable/intro.html
+https://github.com/datatime27/videos/blob/main/word-tracker/build-scatter-plot.py
 """
 
 conn = psycopg2.connect(database = "discord", 
@@ -13,6 +30,11 @@ conn = psycopg2.connect(database = "discord",
                         host= 'localhost',
                         password = "123456",
                         port = 5432)
+
+def getSentiment(text):
+    analyzer = SentimentIntensityAnalyzer()
+    scores = analyzer.polarity_scores(text)
+    return scores
 
 class MyClient(discord.Client):
     async def on_ready(self):
@@ -25,6 +47,8 @@ class MyClient(discord.Client):
             print("Failed to send message to channel", channel)
             
     async def on_message(self, message):
+        print(message)
+        print(message.content)
         # responds when a user sends a message with a valid command prefix
         if message.author == self.user:
             return        
@@ -62,7 +86,7 @@ class MyClient(discord.Client):
         file = discord.File('assets/images/hikari_and_nozomi.jpg', filename='hikari_and_nozomi.jpg')
         await message.channel.send('')
 
-    async def command_video(self, message):
+    async def command_video(self, message):  
         file = discord.File('assets/videos/apt.mp4', filename='apt.mp4')
         await message.channel.send(file=file)
 
