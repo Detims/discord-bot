@@ -1,9 +1,22 @@
 import os
 import discord
 import random
+import psycopg2
+
+"""
+To invite this bot into your dicord server, use the link
+https://discord.com/oauth2/authorize?client_id=1348147223426236487&permissions=2147600448&integration_type=0&scope=bot
+"""
+
+conn = psycopg2.connect(database = "discord", 
+                        user = "postgres", 
+                        host= 'localhost',
+                        password = "123456",
+                        port = 5432)
 
 class MyClient(discord.Client):
     async def on_ready(self):
+        # messages on startup
         print(f'We have logged in as {self.user}')
         channel = self.get_channel(1348173982221991946)
         if channel:
@@ -12,8 +25,10 @@ class MyClient(discord.Client):
             print("Failed to send message to channel", channel)
             
     async def on_message(self, message):
+        # responds when a user sends a message with a valid command prefix
         if message.author == self.user:
             return        
+        
         commands = {
             '$commands': self.command_commands,
             '$hello': self.command_hello,
@@ -29,6 +44,8 @@ class MyClient(discord.Client):
                 break
     
     async def command_commands(self, message):
+        # Man I don't want to write into this thing every single time we add something it would be so cool if we stored command objects 
+        # problem for another day
         await message.channel.send('List of commands:\n'
         '$commands - Show commands\n'
         '$hello - Say hello\n'
