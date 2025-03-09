@@ -10,6 +10,7 @@ class MyClient(discord.Client):
             await channel.send('LETS GO GAMBLING!')
         else:
             print("Failed to send message to channel", channel)
+            
     async def on_message(self, message):
         if message.author == self.user:
             return        
@@ -18,8 +19,8 @@ class MyClient(discord.Client):
             '$hello': self.command_hello,
             '$image': self.command_image,
             '$video': self.command_video,
-            '/gambling': self.command_gambling,
-            '/g': self.command_gambling  
+            '$gambling': self.command_gambling,
+            '$test': self.command_test
         }
 
         for command, function in commands.items():
@@ -33,12 +34,15 @@ class MyClient(discord.Client):
         '$hello - Say hello\n'
         '$image - Send an image\n'
         '$video - Send a video\n'
-        '/g or /gambling - Gamble!\n')
+        '$gambling - Gamble!\n'
+        '$test - Parameter checking\n')
 
     async def command_hello(self, message):
         await message.channel.send('Imma touch you lil bro')
+        await message.author.send('I know where you live')
 
     async def command_image(self, message):
+        file = discord.File('assets/images/hikari_and_nozomi.jpg', filename='hikari_and_nozomi.jpg')
         await message.channel.send('')
 
     async def command_video(self, message):
@@ -48,6 +52,10 @@ class MyClient(discord.Client):
     async def command_gambling(self, message):
         result = self.gambling()
         await message.channel.send(f'{message.author.mention} {result}')
+
+    async def command_test(self, message):
+        params = message.content.split()
+        await message.channel.send(f'There are {len(params)} parameters in this message.')
 
     def gambling(self):
         chance_of_win = 1
