@@ -5,9 +5,9 @@ import random
 class MyClient(discord.Client):
     async def on_ready(self):
         print(f'We have logged in as {self.user}')
-        channel = self.get_channel(489282157504626701)
+        channel = self.get_channel(1348173982221991946)
         if channel:
-            await channel.send('LETS GO GAMBLING! >> /g')
+            await channel.send('LETS GO GAMBLING!')
         else:
             print("Failed to send message to channel", channel)
     async def on_message(self, message):
@@ -15,6 +15,7 @@ class MyClient(discord.Client):
             return        
         commands = {
             '$hello': self.command_hello,
+            '$image': self.command_image,
             '$commands': self.command_commands,
             '/gambling': self.command_gambling,
             '/g': self.command_gambling  
@@ -26,10 +27,17 @@ class MyClient(discord.Client):
                 break
     
     async def command_hello(self, message):
-        await message.channel.send('Hello!')
+        await message.channel.send('Imma touch you lil bro')
+
+    async def command_image(self, message):
+        await message.channel.send('')
 
     async def command_commands(self, message):
-        await message.channel.send('List of commands:\n$hello - Say hello\n$commands - Show commands')
+        await message.channel.send('List of commands:\n'
+        '$hello - Say hello\n'
+        '$image - Send an image'
+        '$commands - Show commands\n'
+        '/g or /gambling - Gamble!\n')
 
     async def command_gambling(self, message):
         result = self.gambling()
@@ -50,7 +58,6 @@ def read_token(file_path):
 
 def main():
     token = read_token('token.txt')
-    print(f'Using token: {token}')  
     intents = discord.Intents.default()
     intents.message_content = True
 
