@@ -14,9 +14,10 @@ class MyClient(discord.Client):
         if message.author == self.user:
             return        
         commands = {
+            '$commands': self.command_commands,
             '$hello': self.command_hello,
             '$image': self.command_image,
-            '$commands': self.command_commands,
+            '$video': self.command_video,
             '/gambling': self.command_gambling,
             '/g': self.command_gambling  
         }
@@ -26,18 +27,23 @@ class MyClient(discord.Client):
                 await function(message)
                 break
     
+    async def command_commands(self, message):
+        await message.channel.send('List of commands:\n'
+        '$commands - Show commands\n'
+        '$hello - Say hello\n'
+        '$image - Send an image\n'
+        '$video - Send a video\n'
+        '/g or /gambling - Gamble!\n')
+
     async def command_hello(self, message):
         await message.channel.send('Imma touch you lil bro')
 
     async def command_image(self, message):
         await message.channel.send('')
 
-    async def command_commands(self, message):
-        await message.channel.send('List of commands:\n'
-        '$hello - Say hello\n'
-        '$image - Send an image'
-        '$commands - Show commands\n'
-        '/g or /gambling - Gamble!\n')
+    async def command_video(self, message):
+        file = discord.File('assets/videos/apt.mp4', filename='apt.mp4')
+        await message.channel.send(file=file)
 
     async def command_gambling(self, message):
         result = self.gambling()
