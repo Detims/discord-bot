@@ -47,11 +47,15 @@ class MyClient(discord.Client):
             print("Failed to send message to channel", channel)
             
     async def on_message(self, message):
-        print(message)
+        # print(message)
         print(message.content)
         # responds when a user sends a message with a valid command prefix
         if message.author == self.user:
             return        
+        else:
+            score = getSentiment(message.content)
+            if message.content and message.channel.id == 1348173982221991946:
+                await message.channel.send(f'Sentiment score: {score}')
         
         commands = {
             '$commands': self.command_commands,
@@ -66,7 +70,7 @@ class MyClient(discord.Client):
             if message.content.startswith(command):
                 await function(message)
                 break
-    
+
     async def command_commands(self, message):
         # Man I don't want to write into this thing every single time we add something it would be so cool if we stored command objects 
         # problem for another day
