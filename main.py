@@ -25,7 +25,7 @@ https://discordpy.readthedocs.io/en/stable/intro.html
 https://github.com/datatime27/videos/blob/main/word-tracker/build-scatter-plot.py
 """
 
-conn = psycopg2.connect(database = "discord", 
+db = psycopg2.connect(database = "discord", 
                         user = "postgres", 
                         host= 'localhost',
                         password = "123456",
@@ -45,14 +45,32 @@ class MyClient(discord.Client):
             await channel.send('LETS GO GAMBLING!')
         else:
             print("Failed to send message to channel", channel)
-            
+        
+        """
+        server = [guild for guild in self.guilds if guild.name == '🔥𝓘𝓭𝓸𝓽🔥']
+        member_info = [(member.name, member.id) for member in server[0].members]
+        cur = db.cursor()
+        for member in member_info:
+            id = str(member[1])
+            user = str(member[0])
+            cur.execute(f"INSERT INTO leaderboard(author_id, author_username, points) VALUES({id}, '{user}', 1) WHERE NOT EXISTS (SELECT * FROM leaderboard WHERE author_id = {id});")
+        db.commit()
+        cur.close()
+        """
+
     async def on_message(self, message):
         # print(message)
-        print(message.content)
         # responds when a user sends a message with a valid command prefix
         if message.author == self.user:
             return        
         else:
+            cur = db.cursor()
+            cur.execute(f"INSERT INTO leaderboard(author_id, author_username, points) VALUES('{message.author.id}', '{message.author.name}', 1)" +
+                        " ON CONFLICT (author_id) DO UPDATE SET points = leaderboard.points + 1;")
+            db.commit()
+            cur.close()
+
+            print(message.content)
             score = getSentiment(message.content)
             if message.content and message.channel.id == 1348173982221991946:
                 await message.channel.send(f'Sentiment score: {score}')
