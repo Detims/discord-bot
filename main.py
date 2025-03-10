@@ -23,6 +23,7 @@ Article Links:
 https://www.datacamp.com/tutorial/tutorial-postgresql-python
 https://discordpy.readthedocs.io/en/stable/intro.html
 https://github.com/datatime27/videos/blob/main/word-tracker/build-scatter-plot.py
+https://stackoverflow.com/questions/44862112/how-can-i-send-an-embed-via-my-discord-bot-w-python
 """
 
 db = psycopg2.connect(database = "discord", 
@@ -81,7 +82,8 @@ class MyClient(discord.Client):
             '$image': self.command_image,
             '$video': self.command_video,
             '$gambling': self.command_gambling,
-            '$test': self.command_test
+            '$test': self.command_test,
+            '$leaderboard': self.command_leaderboard
         }
 
         for command, function in commands.items():
@@ -98,7 +100,8 @@ class MyClient(discord.Client):
         '$image - Send an image\n'
         '$video - Send a video\n'
         '$gambling - Gamble!\n'
-        '$test - Parameter checking\n')
+        '$test - Parameter checking\n'
+        '$leaderboard - Display leaderboard\n')
 
     async def command_hello(self, message):
         await message.channel.send('Imma touch you lil bro')
@@ -119,6 +122,16 @@ class MyClient(discord.Client):
     async def command_test(self, message):
         params = message.content.split()
         await message.channel.send(f'There are {len(params)} parameters in this message.')
+
+    async def command_leaderboard(self, message):
+        cur = db.cursor()
+        cur.execute("SELECT author_username, points FROM leaderboard ORDER BY points DESC LIMIT 15;")
+        rows = cur.fetchall()
+        cur.close()
+        
+        playerdata = '\n'.join([row + ':\t' + str(points) for row, points in rows])
+        embedVar = discord.Embed(title='Leaderboard', description=playerdata, color=0x00ff00)
+        await message.channel.send(embed=embedVar)
 
     def gambling(self):
         chance_of_win = 1
