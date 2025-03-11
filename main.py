@@ -4,6 +4,7 @@ import discord
 import random
 import psycopg2
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
+import time
 
 """
 Are these needed?
@@ -48,17 +49,22 @@ class MyClient(discord.Client):
         else:
             print("Failed to send message to channel", channel)
         
-        """
+        # TODO: Create a table per server with member data and whenever a guild member sends a message, update the member data for that guild
+        
         server = [guild for guild in self.guilds if guild.name == '🔥𝓘𝓭𝓸𝓽🔥']
         member_info = [(member.name, member.id) for member in server[0].members]
         cur = db.cursor()
         for member in member_info:
             id = str(member[1])
             user = str(member[0])
-            cur.execute(f"INSERT INTO leaderboard(author_id, author_username, points) VALUES({id}, '{user}', 1) WHERE NOT EXISTS (SELECT * FROM leaderboard WHERE author_id = {id});")
+            # cur.execute(f"INSERT INTO leaderboard(author_id, author_username, points) VALUES({id}, '{user}', 1) " +
+            #             f"WHERE NOT EXISTS (SELECT * FROM leaderboard WHERE author_id = {id});")
+            cur.execute(f"INSERT INTO leaderboard(author_id, author_username, points) VALUES('{id}', '{user}', 0)" +
+                        " ON CONFLICT (author_id) DO UPDATE SET points = leaderboard.points;")
         db.commit()
         cur.close()
-        """
+        
+        
 
     async def on_message(self, message):
         # print(message)
@@ -87,8 +93,13 @@ class MyClient(discord.Client):
             '$leaderboard': self.command_leaderboard
         }
 
+        if self.user.mentioned_in(message):
+            await message.channel.send(f"{message.author.mention} Check DMs.")
+            time.sleep(1)
+            await message.author.send('I am rapidly approaching your location.')
+
         for command, function in commands.items():
-            if message.content.startswith(command):
+            if message.content.startswith(command.lower()):
                 await function(message)
                 break
 
@@ -110,7 +121,7 @@ class MyClient(discord.Client):
 
     async def command_image(self, message):
         file = discord.File('assets/images/hikari_and_nozomi.jpg', filename='hikari_and_nozomi.jpg')
-        await message.channel.send('')
+        await message.channel.send(file=file)
 
     async def command_video(self, message):  
         file = discord.File('assets/videos/apt.mp4', filename='apt.mp4')
@@ -126,14 +137,14 @@ class MyClient(discord.Client):
 
     async def command_leaderboard(self, message):
         cur = db.cursor()
-        cur.execute("SELECT author_username, points FROM leaderboard ORDER BY points DESC LIMIT 15;")
+        cur.execute("SELECT author_username, points FROM leaderboard ORDER BY points DESC;")
         rows = cur.fetchall()
         cur.close()
-        
-        server = [guild for guild in self.guilds if guild.name == '🔥𝓘𝓭𝓸𝓽🔥']
+
+        server = [guild for guild in self.guilds if guild.name == message.guild.name]
         # member_names = [mem.name async for mem in server[0].fetch_members(limit=None)] # unneeded API call
         member_names = [member.name for member in server[0].members]
-        playerdata = '\n'.join([row + ':\t' + str(points) for row, points in rows if row in member_names])
+        playerdata = '\n'.join([name.replace("_", r"\_") + ':\t' + str(points) for name, points in rows if name in member_names and points > 0])
         embedVar = discord.Embed(title='Leaderboard', description=playerdata, color=0x00ff00)
         await message.channel.send(embed=embedVar)
 
