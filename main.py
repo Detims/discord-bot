@@ -1,3 +1,4 @@
+from enum import member
 import os
 import discord
 import random
@@ -129,7 +130,10 @@ class MyClient(discord.Client):
         rows = cur.fetchall()
         cur.close()
         
-        playerdata = '\n'.join([row + ':\t' + str(points) for row, points in rows])
+        server = [guild for guild in self.guilds if guild.name == '🔥𝓘𝓭𝓸𝓽🔥']
+        # member_names = [mem.name async for mem in server[0].fetch_members(limit=None)] # unneeded API call
+        member_names = [member.name for member in server[0].members]
+        playerdata = '\n'.join([row + ':\t' + str(points) for row, points in rows if row in member_names])
         embedVar = discord.Embed(title='Leaderboard', description=playerdata, color=0x00ff00)
         await message.channel.send(embed=embedVar)
 
@@ -150,6 +154,7 @@ def main():
     token = read_token('token.txt')
     intents = discord.Intents.default()
     intents.message_content = True
+    intents.members = True
 
     client = MyClient(intents=intents)
     client.run(token)
