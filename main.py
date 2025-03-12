@@ -76,6 +76,15 @@ class MyClient(discord.Client):
         if message.author == self.user:
             return        
         else:
+            # if a user directly messages the bot, parrot back the message if it is text or an image
+            if message.guild is None and not message.author.bot:
+                print(message.attachments[0].url)
+                if message.attachments:
+                    thing = message.attachments[0].url
+                    await message.author.send(thing)
+                else:
+                    await message.author.send(message.content)
+
             # TODO: ignore bot messages
             cur = db.cursor()
             cur.execute(f"INSERT INTO leaderboard(author_id, author_username, points) VALUES('{message.author.id}', '{message.author.name}', 1)" +
