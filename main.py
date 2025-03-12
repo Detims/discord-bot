@@ -68,18 +68,19 @@ class MyClient(discord.Client):
         db.commit()
         cur.close()
         
-        
+    async def on_message_delete(self, message):
+        await message.author.send('https://tenor.com/view/dbz-discord-gif-24306382')
 
     async def on_message(self, message):
         # print(message)
         # responds when a user sends a message with a valid command prefix
-        if message.author == self.user:
+        if message.author == self.user or message.author.bot:
             return        
         else:
             # if a user directly messages the bot, parrot back the message if it is text or an image
-            if message.guild is None and not message.author.bot:
-                print(message.attachments[0].url)
+            if message.guild is None:
                 if message.attachments:
+                    # print(message.attachments[0].url)
                     thing = message.attachments[0].url
                     await message.author.send(thing)
                 else:
