@@ -77,6 +77,7 @@ class MyClient(discord.Client):
         if message.author == self.user or message.author.bot:
             return        
         else:
+            # print(type(message.author.name))
             # if a user directly messages the bot, parrot back the message if it is text or an image
             if message.guild is None:
                 if message.attachments:
@@ -85,6 +86,14 @@ class MyClient(discord.Client):
                     await message.author.send(thing)
                 else:
                     await message.author.send(message.content)
+
+            if 'gambling' in message.content:
+                await message.add_reaction('😱')
+
+            if message.author.name == '':
+                if random.randint(1, 1000) == 1:
+                   file = discord.File('assets/videos/yapper-yap.mp4', filename='yapper-yap.mp4')
+                   await message.reply(file=file)
 
             # TODO: ignore bot messages
             cur = db.cursor()
