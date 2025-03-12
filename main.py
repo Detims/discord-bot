@@ -43,6 +43,10 @@ class MyClient(discord.Client):
     async def on_ready(self):
         # messages on startup
         print(f'We have logged in as {self.user}')
+
+        status = discord.CustomActivity('Gambling!')
+        await self.change_presence(activity=status)
+
         channel = self.get_channel(1348173982221991946)
         if channel:
             await channel.send('LETS GO GAMBLING!')
@@ -72,6 +76,7 @@ class MyClient(discord.Client):
         if message.author == self.user:
             return        
         else:
+            # TODO: ignore bot messages
             cur = db.cursor()
             cur.execute(f"INSERT INTO leaderboard(author_id, author_username, points) VALUES('{message.author.id}', '{message.author.name}', 1)" +
                         " ON CONFLICT (author_id) DO UPDATE SET points = leaderboard.points + 1;")
