@@ -113,8 +113,8 @@ class MyClient(discord.Client):
             cur.close()
 
             print(message.content)
-            score = getSentiment(message.content)
-            if message.content and message.channel.id == 1348173982221991946:
+            if len(message.content.split()) >= 3 and message.channel.id == 1348173982221991946:
+                score = getSentiment(message.content)
                 await message.channel.send(f'Sentiment score: {score}')
         
         commands = {
