@@ -4,28 +4,29 @@ import discord
 import random
 import psycopg2
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
+from dotenv import load_dotenv
 import time
-
-"""
-Are these needed?
-from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
-from nltk.stem import WordNetLemmatizer
-"""
-
+from google import genai
 
 # import nltk
 # nltk.download('all')
+
+load_dotenv()
+API_KEY = os.getenv("GENAI_API_KEY")
+TOKEN = os.getenv('DISCORD_TOKEN')
+
+client = genai.Client(api_key=API_KEY)
+
+# response = client.models.generate_content(
+#     model='gemini-2.0-flash', 
+#     contents='Talk about the benefits of gambling.'
+# )
 
 """
 To invite this bot into your dicord server, use the link
 https://discord.com/oauth2/authorize?client_id=1348147223426236487&permissions=2147600448&integration_type=0&scope=bot
 
-Article Links:
-https://www.datacamp.com/tutorial/tutorial-postgresql-python
-https://discordpy.readthedocs.io/en/stable/intro.html
-https://github.com/datatime27/videos/blob/main/word-tracker/build-scatter-plot.py
-https://stackoverflow.com/questions/44862112/how-can-i-send-an-embed-via-my-discord-bot-w-python
+https://github.com/google-gemini/generative-ai-python
 """
 
 db = psycopg2.connect(database = "discord", 
@@ -50,6 +51,7 @@ class MyClient(discord.Client):
         channel = self.get_channel(1348173982221991946)
         if channel:
             await channel.send('LETS GO GAMBLING!')
+            # await channel.send(response.text)
         else:
             print("Failed to send message to channel", channel)
         
@@ -80,20 +82,28 @@ class MyClient(discord.Client):
             # print(type(message.author.name))
             # if a user directly messages the bot, parrot back the message if it is text or an image
             if message.guild is None:
-                if message.attachments:
-                    # print(message.attachments[0].url)
-                    thing = message.attachments[0].url
-                    await message.author.send(thing)
-                else:
-                    await message.author.send(message.content)
+                # if message.attachments:
+                #     # print(message.attachments[0].url)
+                #     thing = message.attachments[0].url
+                #     await message.author.send(thing)
+                # else:
+                user_prompt = message.content
+                response = client.models.generate_content(
+                    model='gemini-2.0-flash', 
+                    contents='You are Nozomi Tachibana, a member of the Central Control Center, the student council of Highlander from the game Blue Archive.'
+                    'Despite your position, you tend not to take your work seriously and are often causing trouble with your twin sister Hikari Tachibana.'
+                    'You are usually bratty and often mischievous, frequently causing trouble due to your playful behavior and lack of concern for consequences.'
+                    f'Given this context, compose an appropriate reponse consistent with your personality to {user_prompt}. Keep your response sharp, snappy, and brief.'
+                )
+                await message.author.send(response.text)
 
-            if 'gambling' in message.content:
-                await message.add_reaction('😱')
+            # if 'gambling' in message.content:
+            #     await message.add_reaction('😱')
 
-            if message.author.name == '':
-                if random.randint(1, 1000) == 1:
-                   file = discord.File('assets/videos/yapper-yap.mp4', filename='yapper-yap.mp4')
-                   await message.reply(file=file)
+            # if message.author.name == '':
+            #     if random.randint(1, 1000) == 1:
+            #        file = discord.File('assets/videos/yapper-yap.mp4', filename='yapper-yap.mp4')
+            #        await message.reply(file=file)
 
             # TODO: ignore bot messages
             cur = db.cursor()
@@ -180,19 +190,14 @@ class MyClient(discord.Client):
             return 'WON!'
         else:
             return 'AW DANGIT'
-            
-def read_token(file_path):
-    with open(file_path, 'r') as file:
-        return file.read().strip()
 
 def main():
-    token = read_token('token.txt')
     intents = discord.Intents.default()
     intents.message_content = True
     intents.members = True
 
     client = MyClient(intents=intents)
-    client.run(token)
+    client.run(TOKEN)
 
 if __name__ == "__main__":
     main()
