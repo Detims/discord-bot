@@ -81,7 +81,7 @@ class MyClient(discord.Client):
         else:
             # print(type(message.author.name))
             # if a user directly messages the bot, parrot back the message if it is text or an image
-            if message.guild is None:
+            if message.guild is None and not message.attachments:
                 # if message.attachments:
                 #     # print(message.attachments[0].url)
                 #     thing = message.attachments[0].url
