@@ -7,20 +7,24 @@ from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from dotenv import load_dotenv
 import time
 from google import genai
+# from openai import OpenAI
 
 # import nltk
 # nltk.download('all')
 
 load_dotenv()
 API_KEY = os.getenv("GENAI_API_KEY")
+# GPT_KEY = os.getenv("CHATGPT_API_KEY")
 TOKEN = os.getenv('DISCORD_TOKEN')
 
-client = genai.Client(api_key=API_KEY)
+# client = genai.Client(api_key=API_KEY)
+# client = OpenAI(api_key=GPT_KEY)
 
-# response = client.models.generate_content(
-#     model='gemini-2.0-flash', 
-#     contents='Talk about the benefits of gambling.'
-# )
+# messages = [ {"role": "system", "content": 
+#               'You are Nozomi Tachibana, a member of the Central Control Center, the student council of Highlander from the game Blue Archive.'
+#                     'Despite your position, you tend not to take your work seriously and are often causing trouble with your twin sister Hikari Tachibana.'
+#                     'You are usually bratty and often mischievous, frequently causing trouble due to your playful behavior and lack of concern for consequences.'
+#                     'Keep your responses sharp, snappy, and brief.'} ]
 
 """
 To invite this bot into your dicord server, use the link
@@ -80,13 +84,14 @@ class MyClient(discord.Client):
             return        
         else:
             # print(type(message.author.name))
-            # if a user directly messages the bot, parrot back the message if it is text or an image
             if message.guild is None and not message.attachments:
                 # if message.attachments:
                 #     # print(message.attachments[0].url)
                 #     thing = message.attachments[0].url
                 #     await message.author.send(thing)
                 # else:
+
+                # ------------GEMINI IMPLEMENTATION------------
                 user_prompt = message.content
                 response = client.models.generate_content(
                     model='gemini-2.0-flash', 
@@ -95,7 +100,21 @@ class MyClient(discord.Client):
                     'You are usually bratty and often mischievous, frequently causing trouble due to your playful behavior and lack of concern for consequences.'
                     f'Given this context, compose an appropriate reponse consistent with your personality to {user_prompt}. Keep your response sharp, snappy, and brief.'
                 )
+                
                 await message.author.send(response.text)
+
+                # -----------CHATGPT IMPLEMENTATION-----------
+                # user_message = 'User: ' + message.content
+                # messages.append(
+                #     {"role": "user", "content": user_message},
+                # )
+                # chat = client.chat.completions.create(
+                #     model="gpt-3.5-turbo", messages=messages
+                # )
+                # reply = chat.choices[0].message.content
+                # messages.append({"role": "assistant", "content": reply})
+
+                # await message.author.send(reply)
 
             # if 'gambling' in message.content:
             #     await message.add_reaction('😱')
@@ -112,7 +131,7 @@ class MyClient(discord.Client):
             db.commit()
             cur.close()
 
-            print(message.content)
+            print(f"{message.author.name}: {message.content}")
             if len(message.content.split()) >= 3 and message.channel.id == 1348173982221991946:
                 score = getSentiment(message.content)
                 await message.channel.send(f'Sentiment score: {score}')
@@ -139,7 +158,7 @@ class MyClient(discord.Client):
 
     async def command_commands(self, message):
         # Man I don't want to write into this thing every single time we add something it would be so cool if we stored command objects 
-        # problem for another day
+        # leave technical debt for another day
         await message.channel.send('List of commands:\n'
         '$commands - Show commands\n'
         '$hello - Say hello\n'
@@ -176,7 +195,6 @@ class MyClient(discord.Client):
         cur.close()
 
         server = [guild for guild in self.guilds if guild.name == message.guild.name]
-        # member_names = [mem.name async for mem in server[0].fetch_members(limit=None)] # unneeded API call
         member_names = [member.name for member in server[0].members]
         playerdata = '\n'.join([name.replace("_", r"\_") + ':\t' + str(points) for name, points in rows if name in member_names and points > 0])
         embedVar = discord.Embed(title='Leaderboard', description=playerdata, color=0x00ff00)
