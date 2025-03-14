@@ -17,7 +17,7 @@ API_KEY = os.getenv("GENAI_API_KEY")
 # GPT_KEY = os.getenv("CHATGPT_API_KEY")
 TOKEN = os.getenv('DISCORD_TOKEN')
 
-# client = genai.Client(api_key=API_KEY)
+client = genai.Client(api_key=API_KEY)
 # client = OpenAI(api_key=GPT_KEY)
 
 # messages = [ {"role": "system", "content": 
