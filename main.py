@@ -74,6 +74,13 @@ class MyClient(discord.Client):
         db.commit()
         cur.close()
         
+    async def on_member_update(self, before, after):
+        # print(f'Before: {before}')
+        # print(f'After: {after}')
+        channel = self.get_channel(1348173982221991946)
+        await channel.send(f'{after.mention} I know who you are.')
+        pass
+
     async def on_message_delete(self, message):
         await message.author.send('https://tenor.com/view/dbz-discord-gif-24306382')
 
