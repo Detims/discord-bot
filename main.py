@@ -204,8 +204,10 @@ class MyClient(discord.Client):
         server = [guild for guild in self.guilds if guild.name == message.guild.name]
         member_names = [member.name for member in server[0].members]
         playerdata = '\n'.join([name.replace("_", r"\_") + ':\t' + str(points) for name, points in rows if name in member_names and points > 0])
-        embedVar = discord.Embed(title='Leaderboard', description=playerdata, color=0x00ff00)
-        await message.channel.send(embed=embedVar)
+        file = discord.File('assets/images/hikari_and_nozomi.jpg', filename='hikari_and_nozomi.jpg')
+        embed = discord.Embed(title='Leaderboard', description=playerdata, color=0x00ff00)
+        embed.set_image(url='attachment://hikari_and_nozomi.jpg')
+        await message.channel.send(file=file, embed=embed)
 
     def gambling(self):
         chance_of_win = 1
