@@ -148,8 +148,7 @@ class MyClient(discord.Client):
             '$hello': self.command_hello,
             '$image': self.command_image,
             '$video': self.command_video,
-            '$gambling': self.command_gambling,
-            '$test': self.command_test,
+            '$gamble': self.command_gamble,
             '$leaderboard': self.command_leaderboard
         }
 
@@ -171,8 +170,7 @@ class MyClient(discord.Client):
         '$hello - Say hello\n'
         '$image - Send an image\n'
         '$video - Send a video\n'
-        '$gambling - Gamble!\n'
-        '$test - Parameter checking\n'
+        '$gamble - Gamble!\n'
         '$leaderboard - Display leaderboard\n')
 
     async def command_hello(self, message):
@@ -187,13 +185,9 @@ class MyClient(discord.Client):
         file = discord.File('assets/videos/apt.mp4', filename='apt.mp4')
         await message.channel.send(file=file)
 
-    async def command_gambling(self, message):
+    async def command_gamble(self, message):
         result = self.gambling()
         await message.channel.send(f'{message.author.mention} {result}')
-
-    async def command_test(self, message):
-        params = message.content.split()
-        await message.channel.send(f'There are {len(params)} parameters in this message.')
 
     async def command_leaderboard(self, message):
         cur = db.cursor()
