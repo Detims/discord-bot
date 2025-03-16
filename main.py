@@ -138,10 +138,12 @@ class MyClient(discord.Client):
             db.commit()
             cur.close()
 
+            # Get sentiment score
             print(f"{message.author.name}: {message.content}")
             if len(message.content.split()) >= 3 and message.channel.id == 1348173982221991946:
                 score = getSentiment(message.content)
-                await message.channel.send(f'Sentiment score: {score}')
+                if score['compound'] != 0:
+                    await message.channel.send(f'Sentiment score: {score}')
         
         commands = {
             '$commands': self.command_commands,
