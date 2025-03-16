@@ -103,6 +103,9 @@ class MyClient(discord.Client):
     async def on_message_delete(self, message):
         if random.randint(1, 10) == 1:
             await message.author.send('https://tenor.com/view/dbz-discord-gif-24306382')
+        
+        channel = self.get_channel(1350917212436697279)
+        await channel.send(f'Deleted message from {message.author.name}: {message.content}')
 
     async def on_message(self, message):
         # print(message)
