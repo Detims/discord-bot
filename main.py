@@ -1,7 +1,9 @@
 from enum import member
 import os
+from typing import List
 import discord
 import random
+from numpy import diff
 import psycopg2
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from dotenv import load_dotenv
@@ -75,14 +77,32 @@ class MyClient(discord.Client):
         cur.close()
         
     async def on_member_update(self, before, after):
-        # print(f'Before: {before}')
-        # print(f'After: {after}')
-        channel = self.get_channel(1348173982221991946)
-        await channel.send(f'{after.mention} I know who you are.')
-        pass
+        # When a member updates their information, disclose what information has changed
+        channel = self.get_channel(1350917212436697279)
+        change = (('nickname', before.nick, after.nick) if before.nick != after.nick else 
+                  ('roles', before.roles, after.roles) if before.roles != after.roles else 
+                  # ('avatar', before.guild_avatar, after.guild_avatar) if before.guild_avatar != after.guild_avatar else
+                  ('null', None, None))
+        message = ''
+
+        if change[0] == 'nickname':
+            message = f'<@{after.id}> changed their nickname from {change[1]} to {change[2]}'
+        
+        elif change[0] == 'roles':
+            result = self.compare_roles(change[1], change[2])
+            message = f'<@{after.id}>: {result[0]} role {result[1]}'
+        
+        # elif change[0] == 'avatar':
+        #     message = f'<@{after.id}> changed their profile picture.'
+
+        else:
+            message = f'<@{after.id}>: Pfp change or something else'
+
+        await channel.send(message)
 
     async def on_message_delete(self, message):
-        await message.author.send('https://tenor.com/view/dbz-discord-gif-24306382')
+        if random.randint(1, 10) == 1:
+            await message.author.send('https://tenor.com/view/dbz-discord-gif-24306382')
 
     async def on_message(self, message):
         # print(message)
@@ -204,6 +224,14 @@ class MyClient(discord.Client):
         embed = discord.Embed(title='Leaderboard', description=playerdata, color=0x00ff00)
         embed.set_image(url='attachment://hikari_and_nozomi.jpg')
         await message.channel.send(file=file, embed=embed)
+
+    def compare_roles(self, prev_roles: List, curr_roles: List) -> List:
+        """        
+        compare two role lists to determine whether roles were added or removed and returns a list
+        """        
+        operation = 'Added' if len(prev_roles) < len(curr_roles) else 'Removed' # True if add
+        difference = list(set(curr_roles) - set(prev_roles)) if operation == 'Added' else list(set(prev_roles) - set(curr_roles))
+        return [operation] + difference
 
     def gambling(self):
         chance_of_win = 1
