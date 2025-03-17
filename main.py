@@ -78,6 +78,8 @@ class MyClient(discord.Client):
         
     async def on_member_update(self, before, after):
         # When a member updates their information, disclose what information has changed
+        print(before.flags)
+        print(after.flags)
         channel = self.get_channel(1350917212436697279)
         change = (('nickname', before.nick, after.nick) if before.nick != after.nick else 
                   ('roles', before.roles, after.roles) if before.roles != after.roles else 
@@ -103,9 +105,13 @@ class MyClient(discord.Client):
     async def on_message_delete(self, message):
         if random.randint(1, 10) == 1:
             await message.author.send('https://tenor.com/view/dbz-discord-gif-24306382')
-        
+        thing = ''
+
+        if message.attachments:
+            thing = message.attachments[0].url
+
         channel = self.get_channel(1350917212436697279)
-        await channel.send(f'Deleted message from {message.author.name}: {message.content}')
+        await channel.send(f'Deleted message from {message.author.name}: {message.content} {thing}')
 
     async def on_message(self, message):
         # print(message)
