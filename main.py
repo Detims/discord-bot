@@ -80,27 +80,29 @@ class MyClient(discord.Client):
         # When a member updates their information, disclose what information has changed
         print(before.flags)
         print(after.flags)
-        channel = self.get_channel(1350917212436697279)
-        change = (('nickname', before.nick, after.nick) if before.nick != after.nick else 
-                  ('roles', before.roles, after.roles) if before.roles != after.roles else 
-                  # ('avatar', before.guild_avatar, after.guild_avatar) if before.guild_avatar != after.guild_avatar else
-                  ('null', None, None))
-        message = ''
+        server = [guild for guild in self.guilds if guild.name == '🔥𝓘𝓭𝓸𝓽🔥']
+        if after in [member for member in server[0].members]:
+            channel = self.get_channel(1350917212436697279)
+            change = (('nickname', before.nick, after.nick) if before.nick != after.nick else 
+                    ('roles', before.roles, after.roles) if before.roles != after.roles else 
+                    # ('avatar', before.guild_avatar, after.guild_avatar) if before.guild_avatar != after.guild_avatar else
+                    ('null', None, None))
+            message = ''
 
-        if change[0] == 'nickname':
-            message = f'<@{after.id}> changed their nickname from {change[1]} to {change[2]}'
-        
-        elif change[0] == 'roles':
-            result = self.compare_roles(change[1], change[2])
-            message = f'<@{after.id}>: {result[0]} role {result[1]}'
-        
-        # elif change[0] == 'avatar':
-        #     message = f'<@{after.id}> changed their profile picture.'
+            if change[0] == 'nickname':
+                message = f'<@{after.id}> changed their nickname from {change[1]} to {change[2]}'
+            
+            elif change[0] == 'roles':
+                result = self.compare_roles(change[1], change[2])
+                message = f'<@{after.id}>: {result[0]} role {result[1]}'
+            
+            # elif change[0] == 'avatar':
+            #     message = f'<@{after.id}> changed their profile picture.'
 
-        else:
-            message = f'<@{after.id}>: Pfp change or something else'
+            else:
+                message = f'<@{after.id}>: Pfp change or something else'
 
-        await channel.send(message)
+            await channel.send(message)
 
     async def on_message_delete(self, message):
         if random.randint(1, 10) == 1:
