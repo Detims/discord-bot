@@ -1,9 +1,7 @@
-from enum import member
 import os
 from typing import List
 import discord
 import random
-from numpy import diff
 import psycopg2
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from dotenv import load_dotenv
