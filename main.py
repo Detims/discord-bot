@@ -17,7 +17,10 @@ from google import genai
 load_dotenv()
 API_KEY = os.getenv("GENAI_API_KEY")
 # GPT_KEY = os.getenv("CHATGPT_API_KEY")
-TOKEN = os.getenv('DISCORD_TOKEN')
+TOKEN = os.getenv("DISCORD_TOKEN")
+SERVER_NAME = os.getenv("SERVER_NAME")
+BOT_CHANNEL = int(os.getenv("BOT_CHANNEL_ID"))
+AUDIT_CHANNEL = int(os.getenv("AUDIT_CHANNEL_ID"))
 
 client = genai.Client(api_key=API_KEY)
 # client = OpenAI(api_key=GPT_KEY)
@@ -54,7 +57,7 @@ class MyClient(discord.Client):
         status = discord.CustomActivity('Gambling!')
         await self.change_presence(activity=status)
 
-        channel = self.get_channel(1348173982221991946)
+        channel = self.get_channel(BOT_CHANNEL)
         if channel:
             await channel.send('LETS GO GAMBLING!')
             # await channel.send(response.text)
@@ -63,7 +66,7 @@ class MyClient(discord.Client):
         
         # TODO: Create a table per server with member data and whenever a guild member sends a message, update the member data for that guild
         
-        server = [guild for guild in self.guilds if guild.name == '🔥𝓘𝓭𝓸𝓽🔥']
+        server = [guild for guild in self.guilds if guild.name == SERVER_NAME]
         member_info = [(member.name, member.id) for member in server[0].members]
         cur = db.cursor()
         for member in member_info:
@@ -78,11 +81,10 @@ class MyClient(discord.Client):
         
     async def on_member_update(self, before, after):
         # When a member updates their information, disclose what information has changed
-        print(before.flags)
-        print(after.flags)
-        server = [guild for guild in self.guilds if guild.name == '🔥𝓘𝓭𝓸𝓽🔥']
+        # Edge case: if a user is in more than one server, it will still log
+        server = [guild for guild in self.guilds if guild.name == SERVER_NAME]
         if after in [member for member in server[0].members]:
-            channel = self.get_channel(1350917212436697279)
+            channel = self.get_channel(AUDIT_CHANNEL)
             change = (('nickname', before.nick, after.nick) if before.nick != after.nick else 
                     ('roles', before.roles, after.roles) if before.roles != after.roles else 
                     # ('avatar', before.guild_avatar, after.guild_avatar) if before.guild_avatar != after.guild_avatar else
@@ -112,7 +114,7 @@ class MyClient(discord.Client):
         if message.attachments:
             thing = message.attachments[0].url
 
-        channel = self.get_channel(1350917212436697279)
+        channel = self.get_channel(AUDIT_CHANNEL)
         await channel.send(f'Deleted message from {message.author.name}: {message.content} {thing}')
 
     async def on_message(self, message):
@@ -171,7 +173,7 @@ class MyClient(discord.Client):
 
             # Get sentiment score
             print(f"{message.author.name}: {message.content}")
-            if len(message.content.split()) >= 3 and message.channel.id == 1348173982221991946:
+            if len(message.content.split()) >= 3 and message.channel.id == BOT_CHANNEL:
                 score = getSentiment(message.content)
                 if score['compound'] != 0:
                     await message.channel.send(f'Sentiment score: {score}')
