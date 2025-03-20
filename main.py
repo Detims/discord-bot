@@ -182,7 +182,7 @@ class MyClient(discord.Client):
             db.commit()
             cur.close()
 
-            # Get sentiment score
+            # Get sentiment score and ignore neutral messages
             print(f"{message.author.name}: {message.content}")
             if len(message.content.split()) >= 3 and message.channel.id == BOT_CHANNEL:
                 score = getSentiment(message.content)
@@ -198,6 +198,7 @@ class MyClient(discord.Client):
             '$leaderboard': self.command_leaderboard
         }
 
+        # Detect if bot was pinged in the message
         if self.user.mentioned_in(message):
             await message.channel.send(f"{message.author.mention} Check DMs.")
             time.sleep(1)
@@ -244,7 +245,7 @@ class MyClient(discord.Client):
 
     async def command_gamble(self, message):
         """
-        Rolls a number between 1 and 100 and pings the user the result 
+        Gambles pings the user the result 
         """
         result = self.gambling()
         await message.channel.send(f'{message.author.mention} {result}')
@@ -275,6 +276,9 @@ class MyClient(discord.Client):
         return [operation] + difference
 
     def gambling(self):
+        """
+        Get a number between 1 and 100 and return a string pertaining to a win/loss
+        """
         chance_of_win = 1
         random_number = random.randint(1, 100)
 
