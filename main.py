@@ -43,13 +43,18 @@ db = psycopg2.connect(database = "discord",
                         port = 5432)
 
 def getSentiment(text):
+    """
+    Uses the NLTK library to calculate a sentiment score from a message
+    """
     analyzer = SentimentIntensityAnalyzer()
     scores = analyzer.polarity_scores(text)
     return scores
 
 class MyClient(discord.Client):
     async def on_ready(self):
-        # messages on startup
+        """
+        Send a message on startup, and insert every user in every server into the leaderboard
+        """
         print(f'We have logged in as {self.user}')
 
         status = discord.CustomActivity('Gambling!')
@@ -78,8 +83,11 @@ class MyClient(discord.Client):
         cur.close()
         
     async def on_member_update(self, before, after):
-        # When a member updates their information, disclose what information has changed
-        # Edge case: if a user is in more than one server, it will still log
+        """
+        When a member updates their information, disclose what information has changed
+        TODO Edge case: if a user is in more than one server, it will still log
+        I can't seem to get profile picture changes to register
+        """
         server = [guild for guild in self.guilds if guild.name == SERVER_NAME]
         if after in [member for member in server[0].members]:
             channel = self.get_channel(AUDIT_CHANNEL)
@@ -105,6 +113,9 @@ class MyClient(discord.Client):
             await channel.send(message)
 
     async def on_message_delete(self, message):
+        """
+        Has a chance to DM the user a gif, and documents the deleted message in an audit channel
+        """
         if random.randint(1, 10) == 1:
             await message.author.send('https://tenor.com/view/dbz-discord-gif-24306382')
         thing = ''
@@ -116,8 +127,9 @@ class MyClient(discord.Client):
         await channel.send(f'Deleted message from {message.author.name}: {message.content} {thing}')
 
     async def on_message(self, message):
-        # print(message)
-        # responds when a user sends a message with a valid command prefix
+        """
+        performs various actions pertaining to the content of a user message
+        """
         if message.author == self.user or message.author.bot:
             return        
         else:
@@ -196,8 +208,10 @@ class MyClient(discord.Client):
                 break
 
     async def command_commands(self, message):
-        # Man I don't want to write into this thing every single time we add something it would be so cool if we stored command objects 
-        # leave technical debt for another day
+        """
+        Send the command list and their descriptions
+        TODO Make some better system to hold command information
+        """
         await message.channel.send('List of commands:\n'
         '$commands - Show commands\n'
         '$hello - Say hello\n'
@@ -207,22 +221,37 @@ class MyClient(discord.Client):
         '$leaderboard - Display leaderboard\n')
 
     async def command_hello(self, message):
+        """
+        Sends a message to the channel and to the user
+        """
         await message.channel.send('Imma touch you lil bro')
         await message.author.send('I know where you live')
 
     async def command_image(self, message):
+        """
+        Sends an image
+        """
         file = discord.File('assets/images/hikari_and_nozomi.jpg', filename='hikari_and_nozomi.jpg')
         await message.channel.send(file=file)
 
     async def command_video(self, message):  
+        """
+        Sends a video
+        """
         file = discord.File('assets/videos/apt.mp4', filename='apt.mp4')
         await message.channel.send(file=file)
 
     async def command_gamble(self, message):
+        """
+        Rolls a number between 1 and 100 and pings the user the result 
+        """
         result = self.gambling()
         await message.channel.send(f'{message.author.mention} {result}')
 
     async def command_leaderboard(self, message):
+        """
+        Prints out a leaderboard in an Embed format
+        """
         cur = db.cursor()
         cur.execute("SELECT author_username, points FROM leaderboard ORDER BY points DESC;")
         rows = cur.fetchall()
@@ -238,7 +267,7 @@ class MyClient(discord.Client):
 
     def compare_roles(self, prev_roles: List, curr_roles: List) -> List:
         """        
-        compare two role lists to determine whether roles were added or removed and returns a list
+        Compare two role lists to determine whether roles were added or removed and returns a list
         """        
         operation = 'Added' if len(prev_roles) < len(curr_roles) else 'Removed' # True if add
         difference = list(set(curr_roles) - set(prev_roles)) if operation == 'Added' else list(set(prev_roles) - set(curr_roles))
