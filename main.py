@@ -255,7 +255,7 @@ class MyClient(discord.Client):
         Prints out a leaderboard in an Embed format
         """
         cur = db.cursor()
-        cur.execute("SELECT author_username, points FROM leaderboard ORDER BY points DESC;")
+        cur.execute("SELECT author_username, points FROM leaderboard ORDER BY points DESC LIMIT 15;")
         rows = cur.fetchall()
         cur.close()
 
