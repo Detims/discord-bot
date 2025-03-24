@@ -86,15 +86,14 @@ class MyClient(discord.Client):
         server = [guild for guild in self.guilds if guild.name == SERVER_NAME]
         if after in [member for member in server[0].members]:
             channel = self.get_channel(AUDIT_CHANNEL)
-            change = (('username', before.name, after.name) if before.name != after.name else
-                    ('avatar', None, None))
+            change = ('username', before.name, after.name) if before.name != after.name else None
             message = ''
 
-            if change[0] == 'username':
+            if change:
                 message = f'<@{after.id}> changed their username from {change[1]} to {change[2]}'
 
-            elif change[0] == 'avatar':
-                message = f'<@{after.id}> changed their main profile picture'
+            # elif change[0] == 'avatar':
+            #     message = f'<@{after.id}> changed their main profile picture'
 
             await channel.send(message)
 
