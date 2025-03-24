@@ -91,11 +91,12 @@ class MyClient(discord.Client):
 
             if change:
                 message = f'<@{after.id}> changed their username from {change[1]} to {change[2]}'
+                await channel.send(message)
 
             # elif change[0] == 'avatar':
             #     message = f'<@{after.id}> changed their main profile picture'
 
-            await channel.send(message)
+            
 
     async def on_member_update(self, before, after):
         """
