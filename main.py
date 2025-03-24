@@ -82,6 +82,22 @@ class MyClient(discord.Client):
         db.commit()
         cur.close()
         
+    async def on_user_update(self, before, after):
+        server = [guild for guild in self.guilds if guild.name == SERVER_NAME]
+        if after in [member for member in server[0].members]:
+            channel = self.get_channel(AUDIT_CHANNEL)
+            change = (('username', before.name, after.name) if before.name != after.name else
+                    ('avatar', None, None))
+            message = ''
+
+            if change[0] == 'username':
+                message = f'<@{after.id}> changed their username from {change[1]} to {change[2]}'
+
+            elif change[0] == 'avatar':
+                message = f'<@{after.id}> changed their main profile picture'
+
+            await channel.send(message)
+
     async def on_member_update(self, before, after):
         """
         When a member updates their information, disclose what information has changed
@@ -108,7 +124,7 @@ class MyClient(discord.Client):
             #     message = f'<@{after.id}> changed their profile picture.'
 
             else:
-                message = f'<@{after.id}> changed their profile picture (probably).'
+                message = f'<@{after.id}> changed their server profile picture (probably)'
 
             await channel.send(message)
 
