@@ -81,22 +81,6 @@ class MyClient(discord.Client):
                         " ON CONFLICT (author_id) DO UPDATE SET points = leaderboard.points;")
         db.commit()
         cur.close()
-        
-    async def on_user_update(self, before, after):
-        server = [guild for guild in self.guilds if guild.name == SERVER_NAME]
-        if after in [member for member in server[0].members]:
-            channel = self.get_channel(AUDIT_CHANNEL)
-            change = ('username', before.name, after.name) if before.name != after.name else None
-            message = ''
-
-            if change:
-                message = f'<@{after.id}> changed their username from {change[1]} to {change[2]}'
-                await channel.send(message)
-
-            # elif change[0] == 'avatar':
-            #     message = f'<@{after.id}> changed their main profile picture'
-
-            
 
     async def on_member_update(self, before, after):
         """
@@ -109,8 +93,7 @@ class MyClient(discord.Client):
             channel = self.get_channel(AUDIT_CHANNEL)
             change = (('nickname', before.nick, after.nick) if before.nick != after.nick else 
                     ('roles', before.roles, after.roles) if before.roles != after.roles else 
-                    # ('avatar', before.guild_avatar, after.guild_avatar) if before.guild_avatar != after.guild_avatar else
-                    ('null', None, None))
+                    ('avatar', None, None))
             message = ''
 
             if change[0] == 'nickname':
@@ -120,11 +103,8 @@ class MyClient(discord.Client):
                 result = self.compare_roles(change[1], change[2])
                 message = f'<@{after.id}>: {result[0]} role {result[1]}'
             
-            # elif change[0] == 'avatar':
-            #     message = f'<@{after.id}> changed their profile picture.'
-
-            else:
-                message = f'<@{after.id}> changed their server profile picture (probably)'
+            elif change[0] == 'avatar':
+                message = f'<@{after.id}> changed their profile picture.'
 
             await channel.send(message)
 
