@@ -108,7 +108,7 @@ class MyClient(discord.Client):
             #     message = f'<@{after.id}> changed their profile picture.'
 
             else:
-                message = f'<@{after.id}>: Pfp change or something else'
+                message = f'<@{after.id}> changed their profile picture (probably).'
 
             await channel.send(message)
 
