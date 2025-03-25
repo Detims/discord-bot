@@ -76,8 +76,8 @@ class MyClient(discord.Client):
         for member in member_info:
             id = str(member[1])
             user = str(member[0])
-            cur.execute(f"INSERT INTO leaderboard(author_id, author_username, points) VALUES({id}, '{user}', 1) " +
-                        f"WHERE NOT EXISTS (SELECT * FROM leaderboard WHERE author_id = {id});")
+            # cur.execute(f"INSERT INTO leaderboard(author_id, author_username, points) VALUES({id}, '{user}', 1) " +
+            #             f"WHERE NOT EXISTS (SELECT * FROM leaderboard WHERE author_id = {id});")
             cur.execute(f"INSERT INTO leaderboard(author_id, author_username, points) VALUES('{id}', '{user}', 0)" +
                         " ON CONFLICT (author_id) DO UPDATE SET points = leaderboard.points;")
         db.commit()
