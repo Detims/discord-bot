@@ -109,7 +109,7 @@ class MyClient(discord.Client):
             channel = self.get_channel(AUDIT_CHANNEL)
             change = (('nickname', before.nick, after.nick) if before.nick != after.nick else 
                     ('roles', before.roles, after.roles) if before.roles != after.roles else 
-                    ('avatar', before.guild_avatar.url, after.guild_avatar.url) if after.guild_avatar else
+                    # ('avatar', before.guild_avatar.url, after.guild_avatar.url) if after.guild_avatar else
                     ('null', None, None))
             message = ''
 
@@ -120,8 +120,8 @@ class MyClient(discord.Client):
                 result = self.compare_roles(change[1], change[2])
                 message = f'<@{after.id}>: {result[0]} role {result[1]}'
             
-            elif change[0] == 'avatar':
-                message = f'<@{after.id}> changed their server profile picture'
+            # elif change[0] == 'avatar':
+            #     message = f'<@{after.id}> changed their server profile picture'
 
             else:
                 message = f'<@{after.id}> changed their profile picture (probably)'
