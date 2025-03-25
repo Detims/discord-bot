@@ -1,16 +1,17 @@
 import os
-from typing import List
 import discord
 import random
-import psycopg2
+# import psycopg2
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from dotenv import load_dotenv
 import time
 from google import genai
 # from openai import OpenAI
 
+# Run docker: docker-compose up -d --build
+
 # import nltk
-# nltk.download('all')
+#nltk.download('all')
 
 load_dotenv()
 API_KEY = os.getenv("GENAI_API_KEY")
@@ -36,11 +37,11 @@ https://discord.com/oauth2/authorize?client_id=1348147223426236487&permissions=2
 https://github.com/google-gemini/generative-ai-python
 """
 
-db = psycopg2.connect(database = "discord", 
-                        user = "postgres", 
-                        host= 'localhost',
-                        password = "123456",
-                        port = 5432)
+# db = psycopg2.connect(database = "discord", 
+#                         user = "postgres", 
+#                         host= 'localhost',
+#                         password = "123456",
+#                         port = 5432)
 
 def getSentiment(text):
     """
@@ -71,16 +72,31 @@ class MyClient(discord.Client):
         
         server = [guild for guild in self.guilds if guild.name == SERVER_NAME]
         member_info = [(member.name, member.id) for member in server[0].members]
-        cur = db.cursor()
-        for member in member_info:
-            id = str(member[1])
-            user = str(member[0])
-            # cur.execute(f"INSERT INTO leaderboard(author_id, author_username, points) VALUES({id}, '{user}', 1) " +
-            #             f"WHERE NOT EXISTS (SELECT * FROM leaderboard WHERE author_id = {id});")
-            cur.execute(f"INSERT INTO leaderboard(author_id, author_username, points) VALUES('{id}', '{user}', 0)" +
-                        " ON CONFLICT (author_id) DO UPDATE SET points = leaderboard.points;")
-        db.commit()
-        cur.close()
+        # cur = db.cursor()
+        # for member in member_info:
+        #     id = str(member[1])
+        #     user = str(member[0])
+        #     # cur.execute(f"INSERT INTO leaderboard(author_id, author_username, points) VALUES({id}, '{user}', 1) " +
+        #     #             f"WHERE NOT EXISTS (SELECT * FROM leaderboard WHERE author_id = {id});")
+        #     cur.execute(f"INSERT INTO leaderboard(author_id, author_username, points) VALUES('{id}', '{user}', 0)" +
+        #                 " ON CONFLICT (author_id) DO UPDATE SET points = leaderboard.points;")
+        # db.commit()
+        # cur.close()
+        
+    async def on_user_update(self, before, after):
+        server = [guild for guild in self.guilds if guild.name == SERVER_NAME]
+        if after in [member for member in server[0].members]:
+            channel = self.get_channel(AUDIT_CHANNEL)
+            change = ('username', before.name, after.name) if before.name != after.name else None
+            message = ''
+
+            if change:
+                message = f'<@{after.id}> changed their username from {change[1]} to {change[2]}'
+
+            # elif change[0] == 'avatar':
+            #     message = f'<@{after.id}> changed their main profile picture'
+
+            await channel.send(message)
 
     async def on_member_update(self, before, after):
         """
@@ -93,7 +109,8 @@ class MyClient(discord.Client):
             channel = self.get_channel(AUDIT_CHANNEL)
             change = (('nickname', before.nick, after.nick) if before.nick != after.nick else 
                     ('roles', before.roles, after.roles) if before.roles != after.roles else 
-                    ('avatar', None, None))
+                    ('avatar', before.guild_avatar.url, after.guild_avatar.url) if after.guild_avatar else
+                    ('null', None, None))
             message = ''
 
             if change[0] == 'nickname':
@@ -104,7 +121,10 @@ class MyClient(discord.Client):
                 message = f'<@{after.id}>: {result[0]} role {result[1]}'
             
             elif change[0] == 'avatar':
-                message = f'<@{after.id}> changed their profile picture.'
+                message = f'<@{after.id}> changed their server profile picture'
+
+            else:
+                message = f'<@{after.id}> changed their profile picture (probably)'
 
             await channel.send(message)
 
@@ -172,11 +192,11 @@ class MyClient(discord.Client):
             #        await message.reply(file=file)
 
             # TODO: ignore bot messages
-            cur = db.cursor()
-            cur.execute(f"INSERT INTO leaderboard(author_id, author_username, points) VALUES('{message.author.id}', '{message.author.name}', 1)" +
-                        " ON CONFLICT (author_id) DO UPDATE SET points = leaderboard.points + 1;")
-            db.commit()
-            cur.close()
+            # cur = db.cursor()
+            # cur.execute(f"INSERT INTO leaderboard(author_id, author_username, points) VALUES('{message.author.id}', '{message.author.name}', 1)" +
+            #             " ON CONFLICT (author_id) DO UPDATE SET points = leaderboard.points + 1;")
+            # db.commit()
+            # cur.close()
 
             # Get sentiment score and ignore neutral messages
             print(f"{message.author.name}: {message.content}")
@@ -191,7 +211,7 @@ class MyClient(discord.Client):
             '$image': self.command_image,
             '$video': self.command_video,
             '$gamble': self.command_gamble,
-            '$leaderboard': self.command_leaderboard
+            # '$leaderboard': self.command_leaderboard
         }
 
         # Detect if bot was pinged in the message
@@ -246,24 +266,24 @@ class MyClient(discord.Client):
         result = self.gambling()
         await message.channel.send(f'{message.author.mention} {result}')
 
-    async def command_leaderboard(self, message):
-        """
-        Prints out a leaderboard in an Embed format
-        """
-        cur = db.cursor()
-        cur.execute("SELECT author_username, points FROM leaderboard ORDER BY points DESC LIMIT 15;")
-        rows = cur.fetchall()
-        cur.close()
+    # async def command_leaderboard(self, message):
+    #     """
+    #     Prints out a leaderboard in an Embed format
+    #     """
+    #     cur = db.cursor()
+    #     cur.execute("SELECT author_username, points FROM leaderboard ORDER BY points DESC LIMIT 15;")
+    #     rows = cur.fetchall()
+    #     cur.close()
 
-        server = [guild for guild in self.guilds if guild.name == message.guild.name]
-        member_names = [member.name for member in server[0].members]
-        playerdata = '\n'.join([name.replace("_", r"\_") + ':\t' + str(points) for name, points in rows if name in member_names and points > 0])
-        file = discord.File('assets/images/hikari_and_nozomi.jpg', filename='hikari_and_nozomi.jpg')
-        embed = discord.Embed(title='Leaderboard', description=playerdata, color=0x00ff00)
-        embed.set_image(url='attachment://hikari_and_nozomi.jpg')
-        await message.channel.send(file=file, embed=embed)
+    #     server = [guild for guild in self.guilds if guild.name == message.guild.name]
+    #     member_names = [member.name for member in server[0].members]
+    #     playerdata = '\n'.join([name.replace("_", r"\_") + ':\t' + str(points) for name, points in rows if name in member_names and points > 0])
+    #     file = discord.File('assets/images/hikari_and_nozomi.jpg', filename='hikari_and_nozomi.jpg')
+    #     embed = discord.Embed(title='Leaderboard', description=playerdata, color=0x00ff00)
+    #     embed.set_image(url='attachment://hikari_and_nozomi.jpg')
+    #     await message.channel.send(file=file, embed=embed)
 
-    def compare_roles(self, prev_roles: List, curr_roles: List) -> List:
+    def compare_roles(self, prev_roles, curr_roles):
         """        
         Compare two role lists to determine whether roles were added or removed and returns a list
         """        
