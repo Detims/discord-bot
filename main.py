@@ -218,7 +218,7 @@ class MyClient(discord.Client):
         if self.user.mentioned_in(message):
             await message.channel.send(f"{message.author.mention} Check DMs.")
             time.sleep(1)
-            await message.author.send('I am rapidly approaching your location.')
+            await message.author.send('I know where you live.')
 
         for command, function in commands.items():
             if message.content.startswith(command.lower()):
