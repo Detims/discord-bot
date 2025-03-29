@@ -139,9 +139,8 @@ class MyClient(discord.Client):
         if message.attachments:
             thing = message.attachments[0].url
 
-        if message.guild == SERVER_NAME:
-            channel = self.get_channel(AUDIT_CHANNEL)
-            await channel.send(f'Deleted message from {message.author.name}: {message.content} {thing}')
+        channel = self.get_channel(AUDIT_CHANNEL)
+        await channel.send(f'Deleted message from {message.author.name}: {message.content} {thing}')
 
     async def on_message(self, message):
         """
