@@ -152,12 +152,6 @@ class MyClient(discord.Client):
         else:
             # print(type(message.author.name))
             if message.guild is None and not message.attachments:
-                # if message.attachments:
-                #     # print(message.attachments[0].url)
-                #     thing = message.attachments[0].url
-                #     await message.author.send(thing)
-                # else:
-
                 # ------------GEMINI IMPLEMENTATION------------
                 user_prompt = message.content
                 response = client.models.generate_content(
@@ -182,14 +176,6 @@ class MyClient(discord.Client):
                 # messages.append({"role": "assistant", "content": reply})
 
                 # await message.author.send(reply)
-
-            # if 'gambling' in message.content:
-            #     await message.add_reaction('😱')
-
-            # if message.author.name == '':
-            #     if random.randint(1, 1000) == 1:
-            #        file = discord.File('assets/videos/yapper-yap.mp4', filename='yapper-yap.mp4')
-            #        await message.reply(file=file)
 
             # TODO: ignore bot messages
             cur = db.cursor()
