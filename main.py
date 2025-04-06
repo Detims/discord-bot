@@ -137,11 +137,14 @@ class MyClient(discord.Client):
         thing = ''
 
         if message.attachments:
-            thing = message.attachments[0].url
+            thing = []
+            for file in message.attachments:
+                attachment = await file.to_file(use_cached = True, spoiler = False)
+                thing.append(attachment)
 
         if message.guild.name == SERVER_NAME:
             channel = self.get_channel(AUDIT_CHANNEL)
-            await channel.send(f'Deleted message from {message.author.name}: {message.content} {thing}')
+            await channel.send(f'Deleted message from {message.author.name}: {message.content}', files=thing)
 
     async def on_message(self, message):
         """
