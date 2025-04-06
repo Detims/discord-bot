@@ -145,6 +145,11 @@ class MyClient(discord.Client):
             channel = self.get_channel(AUDIT_CHANNEL)
             await channel.send(f'Deleted message from {message.author.name}: {message.content}', files=deletedFiles)
 
+    async def on_message_edit(self, before, after):
+        if before.content != after.content and after.guild.name == SERVER_NAME and len(before.content) + len(after.content) < 900:
+            channel = self.get_channel(AUDIT_CHANNEL)
+            await channel.send(f'Edited message from {after.author.name}:\nBefore: {before.content}\nAfter: {after.content}')
+
     async def on_message(self, message):
         """
         performs various actions pertaining to the content of a user message
