@@ -139,8 +139,9 @@ class MyClient(discord.Client):
         if message.attachments:
             thing = message.attachments[0].url
 
-        channel = self.get_channel(AUDIT_CHANNEL)
-        await channel.send(f'Deleted message from {message.author.name}: {message.content} {thing}')
+        if message.guild.name == SERVER_NAME:
+            channel = self.get_channel(AUDIT_CHANNEL)
+            await channel.send(f'Deleted message from {message.author.name}: {message.content} {thing}')
 
     async def on_message(self, message):
         """
@@ -155,6 +156,7 @@ class MyClient(discord.Client):
                 user_prompt = message.content
                 response = client.models.generate_content(
                     model='gemini-2.0-flash', 
+                    # Insert your prompt here
                     contents='You are Nozomi Tachibana, a member of the Central Control Center, the student council of Highlander from the game Blue Archive.'
                     'Despite your position, you tend not to take your work seriously and are often causing trouble with your twin sister Hikari Tachibana.'
                     'You are usually bratty and often mischievous, frequently causing trouble due to your playful behavior and lack of concern for consequences.'
