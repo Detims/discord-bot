@@ -134,17 +134,16 @@ class MyClient(discord.Client):
         """
         if random.randint(1, 10) == 1:
             await message.author.send('https://tenor.com/view/dbz-discord-gif-24306382')
-        thing = ''
+        deletedFiles = []
 
         if message.attachments:
-            thing = []
             for file in message.attachments:
                 attachment = await file.to_file(use_cached = True, spoiler = False)
-                thing.append(attachment)
+                deletedFiles.append(attachment)
 
         if message.guild.name == SERVER_NAME:
             channel = self.get_channel(AUDIT_CHANNEL)
-            await channel.send(f'Deleted message from {message.author.name}: {message.content}', files=thing)
+            await channel.send(f'Deleted message from {message.author.name}: {message.content}', files=deletedFiles)
 
     async def on_message(self, message):
         """
