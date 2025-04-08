@@ -151,15 +151,21 @@ class MyClient(discord.Client):
         """
         if before.content != after.content and after.guild.name == SERVER_NAME:
             channel = self.get_channel(AUDIT_CHANNEL)
+            otherFiles = []
+
+            if after.attachments:
+                for file in after.attachments:
+                    attachment = await file.to_file(use_cached = True, spoiler = False)
+                    otherFiles.append(attachment)
 
             if len(before.content) + len(after.content) < 900: 
-                await channel.send(f'Edited message from {after.author.name}:\nBefore: {before.content}\nAfter: {after.content}')
+                await channel.send(f'Edited message from {after.author.name}:\nBefore: {before.content}\nAfter: {after.content}\nContext: {'' if otherFiles else 'None'}', files=otherFiles)
             else:
                 # If the message is too long, write everything into a txt file and send it as such
                 with open("buffer.txt", "w") as file:
-                    file.write(f'Edited message from {after.author.name}:\nBefore: {before.content}\nAfter: {after.content}')
+                    file.write(f'Edited message from {after.author.name}:\nBefore: {before.content}\nAfter: {after.content}\nContext: {'' if otherFiles else 'None'}')
                 with open("buffer.txt", "rb") as file:
-                    await channel.send(file=discord.File(file, "buffer.txt"))
+                    await channel.send(file=discord.File(file, "buffer.txt"), files=otherFiles)
                 # clear the buffer
                 with open("buffer.txt", "w") as file:
                     pass
