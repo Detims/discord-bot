@@ -146,13 +146,28 @@ class MyClient(discord.Client):
             await channel.send(f'Deleted message from {message.author.name}: {message.content}', files=deletedFiles)
 
     async def on_message_edit(self, before, after):
-        if before.content != after.content and after.guild.name == SERVER_NAME and len(before.content) + len(after.content) < 900:
+        """
+        Detects when a message is edited and sends the before and after into the audit channel
+        """
+        if before.content != after.content and after.guild.name == SERVER_NAME:
             channel = self.get_channel(AUDIT_CHANNEL)
-            await channel.send(f'Edited message from {after.author.name}:\nBefore: {before.content}\nAfter: {after.content}')
+
+            if len(before.content) + len(after.content) < 900: 
+                await channel.send(f'Edited message from {after.author.name}:\nBefore: {before.content}\nAfter: {after.content}')
+            else:
+                # If the message is too long, write everything into a txt file and send it as such
+                with open("buffer.txt", "w") as file:
+                    file.write(f'Edited message from {after.author.name}:\nBefore: {before.content}\nAfter: {after.content}')
+                with open("buffer.txt", "rb") as file:
+                    await channel.send(file=discord.File(file, "buffer.txt"))
+                # clear the buffer
+                with open("buffer.txt", "w") as file:
+                    pass
+                
 
     async def on_message(self, message):
         """
-        performs various actions pertaining to the content of a user message
+        Performs various actions pertaining to the content of a user message
         """
         if message.author == self.user or message.author.bot:
             return        
@@ -185,7 +200,6 @@ class MyClient(discord.Client):
 
                 # await message.author.send(reply)
 
-            # TODO: ignore bot messages
             cur = db.cursor()
             cur.execute(f"INSERT INTO leaderboard(author_id, author_username, points) VALUES('{message.author.id}', '{message.author.name}', 1)" +
                         " ON CONFLICT (author_id) DO UPDATE SET points = leaderboard.points + 1;")

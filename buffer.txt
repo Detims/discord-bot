@@ -1,0 +1,113 @@
+Edited message from ongthee:
+Before: #include <stdio.h>
+
+// Function to calculate waiting time
+void calculate_waiting_time(int n, int burst_time[], int waiting_time[]) {
+    waiting_time = 0;
+    for (int i = 1; i < n; i++) {
+        waiting_time[i] = burst_time[i - 1] + waiting_time[i - 1];
+    }
+}
+
+// Function to calculate turnaround time
+void calculate_turnaround_time(int n, int burst_time[], int waiting_time[], int turnaround_time[]) {
+    for (int i = 0; i < n; i++) {
+        turnaround_time[i] = burst_time[i] + waiting_time[i];
+    }
+}
+
+// Function to calculate average waiting and turnaround times
+void calculate_average_times(int n, int waiting_time[], int turnaround_time[], float *avg_waiting_time, float *avg_turnaround_time) {
+    float total_waiting_time = 0, total_turnaround_time = 0;
+    for (int i = 0; i < n; i++) {
+        total_waiting_time += waiting_time[i];
+        total_turnaround_time += turnaround_time[i];
+    }
+    *avg_waiting_time = total_waiting_time / n;
+    *avg_turnaround_time = total_turnaround_time / n;
+}
+
+int main() {
+    int n;
+    printf("Enter the number of processes: ");
+    scanf("%d", &n);
+
+    int burst_time[n];
+    printf("Enter the burst times of the processes: ");
+    for (int i = 0; i < n; i++) {
+        scanf("%d", &burst_time[i]);
+    }
+
+    int waiting_time[n], turnaround_time[n];
+    float avg_waiting_time, avg_turnaround_time;
+
+    calculate_waiting_time(n, burst_time, waiting_time);
+    calculate_turnaround_time(n, burst_time, waiting_time, turnaround_time);
+    calculate_average_times(n, waiting_time, turnaround_time, &avg_waiting_time, &avg_turnaround_time);
+
+    printf("Processes Burst Time Waiting Time Turnaround Time\n");
+    for (int i = 0; i < n; i++) {
+        printf("%d\t%d\t%d\t%d\n", i + 1, burst_time[i], waiting_time[i], turnaround_time[i]);
+    }
+
+    printf("Average Waiting Time: %.2f\n", avg_waiting_time);
+    printf("Average Turnaround Time: %.2f\n", avg_turnaround_time);
+
+    return 0;
+}/
+After: #include <stdio.h>
+
+// Function to calculate waiting time
+void calculate_waiting_time(int n, int burst_time[], int waiting_time[]) {
+    waiting_time = 0;
+    for (int i = 1; i < n; i++) {
+        waiting_time[i] = burst_time[i - 1] + waiting_time[i - 1];
+    }
+}
+
+// Function to calculate turnaround time
+void calculate_turnaround_time(int n, int burst_time[], int waiting_time[], int turnaround_time[]) {
+    for (int i = 0; i < n; i++) {
+        turnaround_time[i] = burst_time[i] + waiting_time[i];
+    }
+}
+
+// Function to calculate average waiting and turnaround times
+void calculate_average_times(int n, int waiting_time[], int turnaround_time[], float *avg_waiting_time, float *avg_turnaround_time) {
+    float total_waiting_time = 0, total_turnaround_time = 0;
+    for (int i = 0; i < n; i++) {
+        total_waiting_time += waiting_time[i];
+        total_turnaround_time += turnaround_time[i];
+    }
+    *avg_waiting_time = total_waiting_time / n;
+    *avg_turnaround_time = total_turnaround_time / n;
+}
+
+int main() {
+    int n;
+    printf("Enter the number of processes: ");
+    scanf("%d", &n);
+
+    int burst_time[n];
+    printf("Enter the burst times of the processes: ");
+    for (int i = 0; i < n; i++) {
+        scanf("%d", &burst_time[i]);
+    }
+
+    int waiting_time[n], turnaround_time[n];
+    float avg_waiting_time, avg_turnaround_time;
+
+    calculate_waiting_time(n, burst_time, waiting_time);
+    calculate_turnaround_time(n, burst_time, waiting_time, turnaround_time);
+    calculate_average_times(n, waiting_time, turnaround_time, &avg_waiting_time, &avg_turnaround_time);
+
+    printf("Processes Burst Time Waiting Time Turnaround Time\n");
+    for (int i = 0; i < n; i++) {
+        printf("%d\t%d\t%d\t%d\n", i + 1, burst_time[i], waiting_time[i], turnaround_time[i]);
+    }
+
+    printf("Average Waiting Time: %.2f\n", avg_waiting_time);
+    printf("Average Turnaround Time: %.2f\n", avg_turnaround_time);
+
+    return 0;
+}
