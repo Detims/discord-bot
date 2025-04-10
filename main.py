@@ -20,6 +20,7 @@ TOKEN = os.getenv("DISCORD_TOKEN")
 SERVER_NAME = os.getenv("SERVER_NAME")
 BOT_CHANNEL = int(os.getenv("BOT_CHANNEL_ID"))
 AUDIT_CHANNEL = int(os.getenv("AUDIT_CHANNEL_ID"))
+LEADERBOARD_MAX = 15
 
 client = genai.Client(api_key=API_KEY)
 # client = OpenAI(api_key=GPT_KEY)
@@ -155,8 +156,9 @@ class MyClient(discord.Client):
 
             if after.attachments:
                 for file in after.attachments:
-                    attachment = await file.to_file(use_cached = True, spoiler = False)
-                    otherFiles.append(attachment)
+                    if '.txt' not in file.filename:
+                        attachment = await file.to_file(use_cached = True, spoiler = False)
+                        otherFiles.append(attachment)
 
             if len(before.content) + len(after.content) < 900: 
                 await channel.send(f'Edited message from {after.author.name}:\nBefore: {before.content}\nAfter: {after.content}\nContext: {'' if otherFiles else 'None'}', files=otherFiles)
@@ -165,7 +167,9 @@ class MyClient(discord.Client):
                 with open("buffer.txt", "w") as file:
                     file.write(f'Edited message from {after.author.name}:\nBefore: {before.content}\nAfter: {after.content}\nContext: {'' if otherFiles else 'None'}')
                 with open("buffer.txt", "rb") as file:
-                    await channel.send(file=discord.File(file, "buffer.txt"), files=otherFiles)
+                    content = discord.File(file, "buffer.txt")
+                    otherFiles.append(content)
+                    await channel.send(files=otherFiles)
                 # clear the buffer
                 with open("buffer.txt", "w") as file:
                     pass
@@ -285,12 +289,13 @@ class MyClient(discord.Client):
         Prints out a leaderboard in an Embed format
         """
         cur = db.cursor()
-        cur.execute("SELECT author_username, points FROM leaderboard ORDER BY points DESC LIMIT 15;")
+        cur.execute("SELECT author_username, points FROM leaderboard ORDER BY points DESC;")
         rows = cur.fetchall()
         cur.close()
 
         server = [guild for guild in self.guilds if guild.name == message.guild.name]
         member_names = [member.name for member in server[0].members]
+        if len(member_names) > LEADERBOARD_MAX: member_names = member_names[:LEADERBOARD_MAX]
         playerdata = '\n'.join([name.replace("_", r"\_") + ':\t' + str(points) for name, points in rows if name in member_names and points > 0])
         file = discord.File('assets/images/hikari_and_nozomi.jpg', filename='hikari_and_nozomi.jpg')
         embed = discord.Embed(title='Leaderboard', description=playerdata, color=0x00ff00)
