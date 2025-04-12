@@ -102,32 +102,29 @@ class MyClient(discord.Client):
     async def on_member_update(self, before, after):
         """
         When a member updates their information, disclose what information has changed
-        TODO Edge case: if a user is in more than one server, it will still log
-        I can't seem to get profile picture changes to register
         """
         server = [guild for guild in self.guilds if guild.name == SERVER_NAME]
         if after in [member for member in server[0].members]:
             channel = self.get_channel(AUDIT_CHANNEL)
-            change = (('nickname', before.nick, after.nick) if before.nick != after.nick else 
-                    ('roles', before.roles, after.roles) if before.roles != after.roles else 
-                    # ('avatar', before.guild_avatar.url, after.guild_avatar.url) if after.guild_avatar else
-                    ('null', None, None))
             message = ''
 
-            if change[0] == 'nickname':
-                message = f'<@{after.id}> changed their nickname from {change[1]} to {change[2]}'
-            
-            elif change[0] == 'roles':
-                result = self.compare_roles(change[1], change[2])
+            if before.nick != after.nick:
+                message = f'<@{after.id}> changed their nickname from {before.nick} to {after.nick}'
+            elif before.roles != after.roles:
+                result = self.compare_roles(before.roles, after.roles)
                 message = f'<@{after.id}>: {result[0]} role {result[1]}'
-            
-            # elif change[0] == 'avatar':
-            #     message = f'<@{after.id}> changed their server profile picture'
-
             else:
-                message = f'<@{after.id}> changed their profile picture (probably)'
+                message = f'<@{after.id}> changed their profile picture or avatar decoration'
 
             await channel.send(message)
+
+    async def on_voice_state_update(self, member, before, after):
+        channel = self.get_channel(AUDIT_CHANNEL)
+        if not before.channel and after.channel and after.channel.guild.name == SERVER_NAME:
+            await channel.send(f'{member} has joined {after.channel}')
+        elif before.channel and not after.channel and before.channel.guild.name == SERVER_NAME:
+            await channel.send(f'{member} has left {before.channel}')
+        
 
     async def on_message_delete(self, message):
         """
