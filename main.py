@@ -6,6 +6,8 @@ from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from dotenv import load_dotenv
 import time
 from google import genai
+from datetime import datetime
+import logging
 # from openai import OpenAI
 
 # Run docker: docker-compose up -d --build
@@ -38,6 +40,8 @@ https://discord.com/oauth2/authorize?client_id=1348147223426236487&permissions=2
 https://github.com/google-gemini/generative-ai-python
 """
 
+logging.basicConfig(filename="activity.log", level=logging.INFO)
+
 db = psycopg2.connect(database = "discord", 
                         user = "postgres", 
                         host= 'localhost',
@@ -66,6 +70,7 @@ class MyClient(discord.Client):
         if channel:
             await channel.send('LETS GO GAMBLING!')
             # await channel.send(response.text)
+            # print(datetime.today().strftime('%Y-%m-%d %H:%M:%S'))
         else:
             print("Failed to send message to channel", channel)
         
@@ -120,10 +125,13 @@ class MyClient(discord.Client):
 
     async def on_voice_state_update(self, member, before, after):
         channel = self.get_channel(AUDIT_CHANNEL)
+        timestamp = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
         if not before.channel and after.channel and after.channel.guild.name == SERVER_NAME:
-            await channel.send(f'{member} has joined {after.channel}')
+            logging.info(f'{timestamp}: {member} has joined {after.channel.name}')
+            # await channel.send(f'{member} has joined {after.channel}')
         elif before.channel and not after.channel and before.channel.guild.name == SERVER_NAME:
-            await channel.send(f'{member} has left {before.channel}')
+            # await channel.send(f'{member} has left {before.channel}')
+            logging.info(f'{timestamp}: {member} has left {before.channel.name}')
         
 
     async def on_message_delete(self, message):
