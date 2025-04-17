@@ -228,6 +228,19 @@ class MyClient(discord.Client):
                 if score['compound'] != 0:
                     await message.channel.send(f'Sentiment score: {score}')
         
+        wordbank = {'kms', 'kill myself'}
+
+        for word in wordbank:
+            if word in message.content.lower().replace(" ", ""):
+                coin = random.randint(0,1)
+                if coin == 0:
+                    file = discord.File('assets/videos/nkys0.mp4', filename='never_kill_yourself.mp4')
+                else:
+                    file = discord.File('assets/videos/nkys1.mp4', filename='never_kill_yourself.mp4')
+                
+                await message.reply(file=file)
+                break
+
         commands = {
             '$commands': self.command_commands,
             '$hello': self.command_hello,
