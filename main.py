@@ -124,14 +124,14 @@ class MyClient(discord.Client):
             await channel.send(message)
 
     async def on_voice_state_update(self, member, before, after):
-        channel = self.get_channel(AUDIT_CHANNEL)
+        # channel = self.get_channel(AUDIT_CHANNEL)
         timestamp = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
         if not before.channel and after.channel and after.channel.guild.name == SERVER_NAME:
-            logging.info(f'{timestamp}: {member} has joined {after.channel.name}')
+            logging.info(f'[{timestamp}] {member} has joined {after.channel.name}')
             # await channel.send(f'{member} has joined {after.channel}')
         elif before.channel and not after.channel and before.channel.guild.name == SERVER_NAME:
             # await channel.send(f'{member} has left {before.channel}')
-            logging.info(f'{timestamp}: {member} has left {before.channel.name}')
+            logging.info(f'[{timestamp}] {member} has left {before.channel.name}')
         
 
     async def on_message_delete(self, message):
@@ -223,21 +223,22 @@ class MyClient(discord.Client):
 
             # Get sentiment score and ignore neutral messages
             print(f"{message.author.name}: {message.content}")
+            timestamp = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
+            logging.info(f"[{timestamp}] {message.author.name}: {message.content}")
             if len(message.content.split()) >= 3 and message.channel.id == BOT_CHANNEL:
                 score = getSentiment(message.content)
                 if score['compound'] != 0:
                     await message.channel.send(f'Sentiment score: {score}')
         
-        wordbank = {'kms', 'kill myself'}
+
+        # Random feature my friends wanted
+
+        wordbank = {'kms', 'killmyself', 'killingmyself'}
 
         for word in wordbank:
             if word in message.content.lower().replace(" ", ""):
-                coin = random.randint(0,1)
-                if coin == 0:
-                    file = discord.File('assets/videos/nkys0.mp4', filename='never_kill_yourself.mp4')
-                else:
-                    file = discord.File('assets/videos/nkys1.mp4', filename='never_kill_yourself.mp4')
-                
+                file = (discord.File('assets/videos/nkys0.mp4', filename='never_kill_yourself.mp4') if random.randint(0,1) == 0 else 
+                        discord.File('assets/videos/nkys1.mp4', filename='never_kill_yourself.mp4'))
                 await message.reply(file=file)
                 break
 
