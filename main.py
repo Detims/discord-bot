@@ -2,7 +2,7 @@ import os
 import discord
 import random
 import psycopg2
-from nltk.sentiment.vader import SentimentIntensityAnalyzer
+from nltk.sentiment.vader import SentimentIntensityAnalyzer # import this after running the below imports
 from dotenv import load_dotenv
 import time
 from google import genai
@@ -12,8 +12,9 @@ import logging
 
 # Run docker: docker-compose up -d --build
 
+# run this first if you want to use nltk
 # import nltk
-#nltk.download('all')
+# nltk.download('all')
 
 load_dotenv()
 API_KEY = os.getenv("GENAI_API_KEY")
@@ -69,7 +70,6 @@ class MyClient(discord.Client):
         channel = self.get_channel(BOT_CHANNEL)
         if channel:
             await channel.send('LETS GO GAMBLING!')
-            # await channel.send(response.text)
             # print(datetime.today().strftime('%Y-%m-%d %H:%M:%S'))
         else:
             print("Failed to send message to channel", channel)
@@ -99,8 +99,6 @@ class MyClient(discord.Client):
             if change:
                 message = f'<@{after.id}> changed their username from {change[1]} to {change[2]}'
 
-            # elif change[0] == 'avatar':
-            #     message = f'<@{after.id}> changed their main profile picture'
             if message:
                 await channel.send(message)
 
@@ -124,13 +122,13 @@ class MyClient(discord.Client):
             await channel.send(message)
 
     async def on_voice_state_update(self, member, before, after):
-        # channel = self.get_channel(AUDIT_CHANNEL)
+        """
+        Log the time, user, and channel whenever someone joins/leaves a voice channel
+        """
         timestamp = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
         if not before.channel and after.channel and after.channel.guild.name == SERVER_NAME:
             logging.info(f'[{timestamp}] {member} has joined {after.channel.name}')
-            # await channel.send(f'{member} has joined {after.channel}')
         elif before.channel and not after.channel and before.channel.guild.name == SERVER_NAME:
-            # await channel.send(f'{member} has left {before.channel}')
             logging.info(f'[{timestamp}] {member} has left {before.channel.name}')
         
 
@@ -231,7 +229,7 @@ class MyClient(discord.Client):
                     await message.channel.send(f'Sentiment score: {score}')
         
 
-        # Random feature my friends wanted
+        # Emotionally uplifting videos
 
         wordbank = {'kms', 'killmyself', 'killingmyself'}
 
