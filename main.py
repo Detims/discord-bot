@@ -10,6 +10,7 @@ from datetime import datetime
 import logging
 # from openai import OpenAI
 
+# Import all modules: pip install -r requirements.txt
 # Run docker: docker-compose up -d --build
 
 # run this first if you want to use nltk
@@ -69,8 +70,9 @@ class MyClient(discord.Client):
 
         channel = self.get_channel(BOT_CHANNEL)
         if channel:
-            await channel.send('LETS GO GAMBLING!')
+            # await channel.send('LETS GO GAMBLING!')
             # print(datetime.today().strftime('%Y-%m-%d %H:%M:%S'))
+            pass
         else:
             print("Failed to send message to channel", channel)
         
@@ -147,7 +149,10 @@ class MyClient(discord.Client):
 
         if message.guild.name == SERVER_NAME:
             channel = self.get_channel(AUDIT_CHANNEL)
-            await channel.send(f'Deleted message from {message.author.name}: {message.content}', files=deletedFiles)
+            try:
+                await channel.send(f'Deleted message from {message.author.name}: {message.content}', files=deletedFiles)
+            except:
+                await channel.send(f'Deleted message from {message.author.name}: {message.content}\nAttachments: File too large')
 
     async def on_message_edit(self, before, after):
         """
@@ -250,10 +255,21 @@ class MyClient(discord.Client):
         }
 
         # Detect if bot was pinged in the message
-        if self.user.mentioned_in(message):
-            await message.channel.send(f"{message.author.mention} Check DMs.")
-            time.sleep(1)
-            await message.author.send('I know where you live.')
+        if self.user.mentioned_in(message) and message.guild is not None:
+            # await message.channel.send(f"{message.author.mention} Check DMs.")
+            # time.sleep(1)
+            # await message.author.send('I know where you live.')
+            user_prompt = message.content
+            response = client.models.generate_content(
+                model='gemini-2.0-flash', 
+                # Insert your prompt here
+                contents='You are Nozomi Tachibana, a member of the Central Control Center, the student council of Highlander from the game Blue Archive.'
+                'Despite your position, you tend not to take your work seriously and are often causing trouble with your twin sister Hikari Tachibana.'
+                'You are usually bratty and often mischievous, frequently causing trouble due to your playful behavior and lack of concern for consequences.'
+                f'Given this context, compose an appropriate reponse consistent with your personality to {user_prompt}. Keep your response sharp, snappy, and brief.'
+            )
+            
+            await message.channel.send(response.text)
 
         for command, function in commands.items():
             if message.content.startswith(command.lower()):
