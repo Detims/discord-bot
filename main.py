@@ -2,6 +2,7 @@ import os
 import discord
 import random
 import psycopg2
+# import psycopg
 from nltk.sentiment.vader import SentimentIntensityAnalyzer # import this after running the below imports
 from dotenv import load_dotenv
 import time
@@ -41,6 +42,8 @@ https://discord.com/oauth2/authorize?client_id=1348147223426236487&permissions=2
 
 https://github.com/google-gemini/generative-ai-python
 """
+
+# TODO: update code to new psycop module
 
 logging.basicConfig(filename="activity.log", level=logging.INFO)
 
@@ -92,14 +95,16 @@ class MyClient(discord.Client):
         cur.close()
         
     async def on_user_update(self, before, after):
+        """
+        Audits when a user changes their username. Getting their old display avatar doesn't work so this function is only for username changes
+        """
         server = [guild for guild in self.guilds if guild.name == SERVER_NAME]
         if after in [member for member in server[0].members]:
             channel = self.get_channel(AUDIT_CHANNEL)
-            change = ('username', before.name, after.name) if before.name != after.name else None
             message = ''
 
-            if change:
-                message = f'<@{after.id}> changed their username from {change[1]} to {change[2]}'
+            if before.name != after.name:
+                message = f'<@{after.id}> changed their username from {before.name} to {after.name}'
 
             if message:
                 await channel.send(message)
