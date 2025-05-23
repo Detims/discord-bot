@@ -211,7 +211,7 @@ class MyClient(discord.Client):
                 if message.guild is None:
                     await message.author.send(response.text)
                 elif message.guild is not None:
-                    message.channel.send(response.text)
+                    await message.channel.send(response.text)
 
                 # -----------CHATGPT IMPLEMENTATION-----------
                 # user_message = 'User: ' + message.content
