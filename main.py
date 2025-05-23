@@ -208,7 +208,7 @@ class MyClient(discord.Client):
                     f'Given this context, compose an appropriate reponse consistent with your personality to {user_prompt}. Keep your response sharp, snappy, and brief.'
                 )
 
-                if response.text > 2000:
+                if len(response.text) > 2000:
                     with open("buffer.txt", "w") as file:
                         file.write(response.text)
                     
