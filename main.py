@@ -163,7 +163,7 @@ class MyClient(discord.Client):
         """
         Detects when a message is edited and sends the before and after into the audit channel
         """
-        if before.content != after.content and after.guild.name == SERVER_NAME:
+        if not after.author.bot and before.content != after.content and after.guild.name == SERVER_NAME:
             channel = self.get_channel(AUDIT_CHANNEL)
             otherFiles = []
 
@@ -195,8 +195,8 @@ class MyClient(discord.Client):
         if message.author == self.user or message.author.bot:
             return        
         else:
-            # print(type(message.author.name))
-            if message.guild is None and not message.attachments:
+            # Generate a response when a user either direct messages the bot or pings the bot in a server
+            if (message.guild is None and not message.attachments) or (self.user.mentioned_in(message) and message.guild is not None):
                 # ------------GEMINI IMPLEMENTATION------------
                 user_prompt = message.content
                 response = client.models.generate_content(
@@ -208,7 +208,10 @@ class MyClient(discord.Client):
                     f'Given this context, compose an appropriate reponse consistent with your personality to {user_prompt}. Keep your response sharp, snappy, and brief.'
                 )
                 
-                await message.author.send(response.text)
+                if message.guild is None:
+                    await message.author.send(response.text)
+                elif message.guild is not None:
+                    message.channel.send(response.text)
 
                 # -----------CHATGPT IMPLEMENTATION-----------
                 # user_message = 'User: ' + message.content
@@ -258,23 +261,6 @@ class MyClient(discord.Client):
             '$gamble': self.command_gamble,
             '$leaderboard': self.command_leaderboard
         }
-
-        # Detect if bot was pinged in the message
-        if self.user.mentioned_in(message) and message.guild is not None:
-            # await message.channel.send(f"{message.author.mention} Check DMs.")
-            # time.sleep(1)
-            # await message.author.send('I know where you live.')
-            user_prompt = message.content
-            response = client.models.generate_content(
-                model='gemini-2.0-flash', 
-                # Insert your prompt here
-                contents='You are Nozomi Tachibana, a member of the Central Control Center, the student council of Highlander from the game Blue Archive.'
-                'Despite your position, you tend not to take your work seriously and are often causing trouble with your twin sister Hikari Tachibana.'
-                'You are usually bratty and often mischievous, frequently causing trouble due to your playful behavior and lack of concern for consequences.'
-                f'Given this context, compose an appropriate reponse consistent with your personality to {user_prompt}. Keep your response sharp, snappy, and brief.'
-            )
-            
-            await message.channel.send(response.text)
 
         for command, function in commands.items():
             if message.content.startswith(command.lower()):
