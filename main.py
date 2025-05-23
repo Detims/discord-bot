@@ -207,11 +207,25 @@ class MyClient(discord.Client):
                     'You are usually bratty and often mischievous, frequently causing trouble due to your playful behavior and lack of concern for consequences.'
                     f'Given this context, compose an appropriate reponse consistent with your personality to {user_prompt}. Keep your response sharp, snappy, and brief.'
                 )
-                
-                if message.guild is None:
-                    await message.author.send(response.text)
-                elif message.guild is not None:
-                    await message.channel.send(response.text)
+
+                if response.text > 2000:
+                    with open("buffer.txt", "w") as file:
+                        file.write(response.text)
+                    
+                    with open("buffer.txt", "rb") as file:
+                        content = discord.File(file, "buffer.txt")
+                        if message.guild is None:
+                            await message.author.send(file=content)
+                        elif message.guild is not None:
+                            await message.channel.send(file=content)
+                    # clear the buffer
+                    with open("buffer.txt", "w") as file:
+                        pass
+                else: 
+                    if message.guild is None:
+                        await message.author.send(response.text)
+                    elif message.guild is not None:
+                        await message.channel.send(response.text)
 
                 # -----------CHATGPT IMPLEMENTATION-----------
                 # user_message = 'User: ' + message.content
