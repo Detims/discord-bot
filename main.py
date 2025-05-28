@@ -163,7 +163,7 @@ class MyClient(discord.Client):
         """
         Detects when a message is edited and sends the before and after into the audit channel
         """
-        if not after.author.bot and before.content != after.content and after.guild.name == SERVER_NAME:
+        if not after.author.bot and before.content != after.content and after.guild and after.guild.name == SERVER_NAME:
             channel = self.get_channel(AUDIT_CHANNEL)
             otherFiles = []
 
