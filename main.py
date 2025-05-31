@@ -117,6 +117,7 @@ class MyClient(discord.Client):
         if after in [member for member in server[0].members]:
             channel = self.get_channel(AUDIT_CHANNEL)
             message = ''
+            attachment = ''
 
             if before.nick != after.nick:
                 message = f'<@{after.id}> changed their nickname from {before.nick} to {after.nick}'
@@ -125,8 +126,9 @@ class MyClient(discord.Client):
                 message = f'<@{after.id}>: {result[0]} role {result[1]}'
             else:
                 message = f'<@{after.id}> changed their profile picture or avatar decoration'
+                attachment = await after.display_avatar.to_file(spoiler = False)
 
-            await channel.send(message)
+            await channel.send(message, file=attachment)
 
     async def on_voice_state_update(self, member, before, after):
         """
