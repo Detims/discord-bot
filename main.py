@@ -25,6 +25,8 @@ TOKEN = os.getenv("DISCORD_TOKEN")
 SERVER_NAME = os.getenv("SERVER_NAME")
 BOT_CHANNEL = int(os.getenv("BOT_CHANNEL_ID"))
 AUDIT_CHANNEL = int(os.getenv("AUDIT_CHANNEL_ID"))
+VICTIM_ID = int(os.getenv("VICTIM_ID"))
+TARGET_ROLE = os.getenv("TARGET_ROLE")
 LEADERBOARD_MAX = 15
 
 client = genai.Client(api_key=API_KEY)
@@ -268,6 +270,18 @@ class MyClient(discord.Client):
                         discord.File('assets/videos/nkys1.mp4', filename='never_kill_yourself.mp4'))
                 await message.reply(file=file)
                 break
+
+        # By popular request
+        if message.author.id == VICTIM_ID and message.role_mentions:
+            rolesPinged = message.role_mentions
+            timeoutDuration = 10
+            for role in rolesPinged:
+                if role.name == TARGET_ROLE:
+                    random_number = random.randint(1, 10)
+                    if random_number == 1:
+                        await message.author.timeout(datetime.timedelta(minutes=timeoutDuration),
+                                                     reason=f'{message.author} pinged {TARGET_ROLE}')
+                        await message.channel.send(f'{message.author} has stepped on a landmine! They have been timed out for {timeoutDuration} minutes.')
 
         commands = {
             '$commands': self.command_commands,
