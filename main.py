@@ -7,7 +7,7 @@ from nltk.sentiment.vader import SentimentIntensityAnalyzer # import this after 
 from dotenv import load_dotenv
 import time
 from google import genai
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
 # from openai import OpenAI
 
@@ -272,14 +272,14 @@ class MyClient(discord.Client):
                 break
 
         # By popular request
-        if message.author.id == VICTIM_ID and message.role_mentions:
+        if message.author.id == 366258455524147201 and message.role_mentions:
             rolesPinged = message.role_mentions
             timeoutDuration = 10
             for role in rolesPinged:
-                if role.name == TARGET_ROLE:
+                if role.name != TARGET_ROLE:
                     random_number = random.randint(1, 10)
                     if random_number == 1:
-                        await message.author.timeout(datetime.timedelta(minutes=timeoutDuration),
+                        await message.author.timeout(timedelta(minutes=timeoutDuration),
                                                      reason=f'{message.author} pinged {TARGET_ROLE}')
                         await message.channel.send(f'{message.author} has stepped on a landmine! They have been timed out for {timeoutDuration} minutes.')
 
