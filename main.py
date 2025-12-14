@@ -204,7 +204,7 @@ class MyClient(discord.Client):
                 # ------------GEMINI IMPLEMENTATION------------
                 user_prompt = message.content
                 response = client.models.generate_content(
-                    model='gemini-2.0-flash', 
+                    model='gemini-2.5-flash', 
                     # Insert your prompt here
                     contents='You are Nozomi Tachibana, a member of the Central Control Center, the student council of Highlander from the game Blue Archive.'
                     'Despite your position, you tend not to take your work seriously and are often causing trouble with your twin sister Hikari Tachibana.'
@@ -284,7 +284,7 @@ class MyClient(discord.Client):
                         await message.channel.send(f'{message.author} has stepped on a landmine! They have been timed out for {timeoutDuration} minutes.')
                     
                     channel = self.get_channel(AUDIT_CHANNEL)
-                    await channel.send(f'{message.author} has pinged {TARGET_ROLE} and rolled a {random_number}. {'They have been timed out' if random_number == 1 else ''}')
+                    await channel.send(f'{message.author} has pinged {TARGET_ROLE} and rolled a {random_number}. {'They have been timed out.' if random_number == 1 else ''}')
 
         commands = {
             '$commands': self.command_commands,
