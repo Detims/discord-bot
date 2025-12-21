@@ -55,6 +55,8 @@ db = psycopg2.connect(database = "discord",
                         password = "123456",
                         port = 5432)
 
+
+
 def getSentiment(text):
     """
     Uses the NLTK library to calculate a sentiment score from a message
@@ -63,10 +65,12 @@ def getSentiment(text):
     scores = analyzer.polarity_scores(text)
     return scores
 
+
+
 class MyClient(discord.Client):
     async def on_ready(self):
         """
-        Send a message on startup, and insert every user in every server into the leaderboard
+        Startup and update users and servers tables
         """
         print(f'We have logged in as {self.user}')
 
@@ -74,28 +78,38 @@ class MyClient(discord.Client):
         await self.change_presence(activity=status)
 
         channel = self.get_channel(BOT_CHANNEL)
-        if channel:
-            # await channel.send('LETS GO GAMBLING!')
-            # print(datetime.today().strftime('%Y-%m-%d %H:%M:%S'))
-            pass
-        else:
+        if not channel:
             print("Failed to send message to channel", channel)
-        
-        # TODO: Create a table per server with member data and whenever a guild member sends a message, update the member data for that guild
-        
-        server = [guild for guild in self.guilds if guild.name == SERVER_NAME]
-        member_info = [(member.name, member.id) for member in server[0].members]
+
+        memberInfo = set()
         cur = db.cursor()
-        for member in member_info:
-            id = str(member[1])
-            user = str(member[0])
-            # cur.execute(f"INSERT INTO leaderboard(author_id, author_username, points) VALUES({id}, '{user}', 1) " +
-            #             f"WHERE NOT EXISTS (SELECT * FROM leaderboard WHERE author_id = {id});")
-            cur.execute(f"INSERT INTO leaderboard(author_id, author_username, points) VALUES('{id}', '{user}', 0)" +
-                        " ON CONFLICT (author_id) DO UPDATE SET points = leaderboard.points;")
+        for server in self.guilds:
+            cur.execute("INSERT INTO servers(id, name) VALUES(%s, %s) ON CONFLICT DO NOTHING", (server.id, server.name))
+            for member in server.members:
+                memberInfo.add((member.id, member.name))
+        
+        for member in memberInfo:
+            id = member[0]
+            user = member[1]
+            cur.execute("INSERT INTO users(id, name) VALUES(%s, %s) ON CONFLICT (id) DO NOTHING", (id, user))
+        db.commit()
+        cur.close()          
+        
+
+
+    async def on_member_join(self, member):
+        """
+        Updates tables when a user joins a server.
+        """
+        cur = db.cursor()
+        cur.execute("INSERT INTO servers(id, name) VALUES(%s, %s) ON CONFLICT DO NOTHING", (member.id, member.name))
         db.commit()
         cur.close()
+
+        await member.send('You have just entered a surveillance state! All messages will be recorded and documented for fun.')
         
+
+
     async def on_user_update(self, before, after):
         """
         Audits when a user changes their username. Getting their old display avatar doesn't work so this function is only for username changes
@@ -110,6 +124,8 @@ class MyClient(discord.Client):
 
             if message:
                 await channel.send(message)
+
+
 
     async def on_member_update(self, before, after):
         """
@@ -132,6 +148,8 @@ class MyClient(discord.Client):
 
             await channel.send(message, file=attachment)
 
+
+
     async def on_voice_state_update(self, member, before, after):
         """
         Log the time, user, and channel whenever someone joins/leaves a voice channel
@@ -142,6 +160,7 @@ class MyClient(discord.Client):
         elif before.channel and not after.channel and before.channel.guild.name == SERVER_NAME:
             logging.info(f'[{timestamp}] {member} has left {before.channel.name}')
         
+
 
     async def on_message_delete(self, message):
         """
@@ -162,6 +181,8 @@ class MyClient(discord.Client):
                 await channel.send(f'Deleted message from {message.author.name}: {message.content}', files=deletedFiles)
             except:
                 await channel.send(f'Deleted message from {message.author.name}: {message.content}\nAttachments: File too large')
+
+
 
     async def on_message_edit(self, before, after):
         """
@@ -191,6 +212,7 @@ class MyClient(discord.Client):
                 with open("buffer.txt", "w") as file:
                     pass
                 
+
 
     async def on_message(self, message):
         """
@@ -244,20 +266,28 @@ class MyClient(discord.Client):
 
                 # await message.author.send(reply)
 
-            cur = db.cursor()
-            cur.execute(f"INSERT INTO leaderboard(author_id, author_username, points) VALUES('{message.author.id}', '{message.author.name}', 1)" +
-                        " ON CONFLICT (author_id) DO UPDATE SET points = leaderboard.points + 1;")
-            db.commit()
-            cur.close()
-
             # Get sentiment score and ignore neutral messages
             print(f"{message.author.name}: {message.content}")
             timestamp = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
             logging.info(f"[{timestamp}] {message.author.name}: {message.content}")
-            if len(message.content.split()) >= 3 and message.channel.id == BOT_CHANNEL:
-                score = getSentiment(message.content)
-                if score['compound'] != 0:
-                    await message.channel.send(f'Sentiment score: {score}')
+            score = getSentiment(message.content)
+            
+            cur = db.cursor()
+            insert = """INSERT INTO messages(id, users_id, servers_id, content, attachments, mentions, sentiment, timestamp)
+                           VALUES(%(id)s, %(author)s, %(server)s, %(content)s, %(attachments)s, %(mentions)s, %(sentiment)s, %(timestamp)s)"""
+            data = {
+                'id': message.id,
+                'author': message.author.id,
+                'server': message.guild.id if message.guild else None,
+                'content': message.content,
+                'attachments': True if message.attachments else False,
+                'mentions': True if message.mentions else False,
+                'sentiment': score['compound'],
+                'timestamp': message.created_at,
+            }
+            cur.execute(insert, data)
+            db.commit()
+            cur.close()
         
 
         # Emotionally uplifting videos
@@ -271,7 +301,7 @@ class MyClient(discord.Client):
                 await message.reply(file=file)
                 break
 
-        # By popular request, timeout user on specific role ping
+        # Timeout user on specific role ping
         if message.author.id == VICTIM_ID and message.role_mentions:
             rolesPinged = message.role_mentions
             timeoutDuration = 10
@@ -300,6 +330,8 @@ class MyClient(discord.Client):
                 await function(message)
                 break
 
+
+
     async def command_commands(self, message):
         """
         Send the command list and their descriptions
@@ -313,12 +345,16 @@ class MyClient(discord.Client):
         '$gamble - Gamble!\n'
         '$leaderboard - Display leaderboard\n')
 
+
+
     async def command_hello(self, message):
         """
         Sends a message to the channel and to the user
         """
         await message.channel.send('Imma touch you lil bro')
         await message.author.send('I know where you live')
+
+
 
     async def command_image(self, message):
         """
@@ -327,12 +363,16 @@ class MyClient(discord.Client):
         file = discord.File('assets/images/hikari_and_nozomi.jpg', filename='hikari_and_nozomi.jpg')
         await message.channel.send(file=file)
 
+
+
     async def command_video(self, message):  
         """
         Sends a video
         """
         file = discord.File('assets/videos/apt.mp4', filename='apt.mp4')
         await message.channel.send(file=file)
+
+
 
     async def command_gamble(self, message):
         """
@@ -341,16 +381,23 @@ class MyClient(discord.Client):
         result = self.gambling()
         await message.channel.send(f'{message.author.mention} {result}')
 
+
+
     async def command_leaderboard(self, message):
         """
         Prints out a leaderboard in an Embed format
         """
+        server = [guild for guild in self.guilds if guild.name == message.guild.name]
         cur = db.cursor()
-        cur.execute("SELECT author_username, points FROM leaderboard ORDER BY points DESC;")
+        cur.execute("""
+                    SELECT users.name, COUNT(*) AS points
+                    FROM users
+                    JOIN messages ON users_id = users.id
+                    WHERE servers_id = %s
+                    GROUP BY users.name
+                    ORDER BY points DESC;""", (server[0].id,))
         rows = cur.fetchall()
         cur.close()
-
-        server = [guild for guild in self.guilds if guild.name == message.guild.name]
         memberNames = [member.name for member in server[0].members]
         playerScores = [name.replace("_", r"\_") + ':\t' + str(points) for name, points in rows if name in memberNames and points > 0]
         if len(playerScores) > LEADERBOARD_MAX:
@@ -359,7 +406,9 @@ class MyClient(discord.Client):
         file = discord.File('assets/images/hikari_and_nozomi.jpg', filename='hikari_and_nozomi.jpg')
         embed = discord.Embed(title='Leaderboard', description=playerdata, color=0x00ff00)
         embed.set_image(url='attachment://hikari_and_nozomi.jpg')
-        await message.channel.send(file=file, embed=embed)
+        await message.channel.send(file=file, embed=embed)        
+
+
 
     def compare_roles(self, prev_roles, curr_roles):
         """        
@@ -368,6 +417,8 @@ class MyClient(discord.Client):
         operation = 'Added' if len(prev_roles) < len(curr_roles) else 'Removed' # True if add
         difference = list(set(curr_roles) - set(prev_roles)) if operation == 'Added' else list(set(prev_roles) - set(curr_roles))
         return [operation] + difference
+
+
 
     def gambling(self):
         """
@@ -381,6 +432,8 @@ class MyClient(discord.Client):
         else:
             return 'AW DANGIT'
 
+
+
 def main():
     intents = discord.Intents.default()
     intents.message_content = True
@@ -388,6 +441,8 @@ def main():
 
     client = MyClient(intents=intents)
     client.run(TOKEN)
+
+
 
 if __name__ == "__main__":
     main()
