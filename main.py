@@ -2,6 +2,7 @@ import os
 import discord
 from discord.ext import commands
 import random
+from numpy import require
 import psycopg2
 from nltk.sentiment.vader import SentimentIntensityAnalyzer # import this after running the below imports
 from dotenv import load_dotenv
@@ -21,6 +22,7 @@ import logging
 load_dotenv()
 API_KEY = os.getenv("GENAI_API_KEY")
 TOKEN = os.getenv("DISCORD_TOKEN")
+DATABASE_URL = os.getenv("DATABASE_URL")
 SERVER_NAME = os.getenv("SERVER_NAME")
 BOT_CHANNEL = int(os.getenv("BOT_CHANNEL_ID"))
 AUDIT_CHANNEL = int(os.getenv("AUDIT_CHANNEL_ID"))
@@ -32,13 +34,7 @@ client = genai.Client(api_key=API_KEY)
 
 logging.basicConfig(filename="activity.log", level=logging.INFO)
 
-# TODO: migrate to supabase
-db = psycopg2.connect(database = "discord", 
-                        user = "postgres", 
-                        host= 'localhost',
-                        password = "123456",
-                        port = 5432)
-
+db = psycopg2.connect(DATABASE_URL, sslmode="require")
 
 
 def getSentiment(text):
@@ -70,20 +66,17 @@ async def on_ready():
     if not channel:
         print("Failed to send message to channel", channel)
 
-    memberInfo = set()
     cur = db.cursor()
-    for server in bot.guilds:
-        cur.execute("INSERT INTO servers(id, name) VALUES(%s, %s) ON CONFLICT DO NOTHING", (server.id, server.name))
-        for member in server.members:
-            memberInfo.add((member.id, member.name))
-    
-    for member in memberInfo:
-        id = member[0]
-        user = member[1]
+    for guild in bot.guilds:
+        cur.execute("INSERT INTO servers(id, name) VALUES(%s, %s) ON CONFLICT DO NOTHING", (guild.id, guild.name))    
+            
+    for member in bot.get_all_members():
+        id = member.id
+        user = member.name
         cur.execute("INSERT INTO users(id, name) VALUES(%s, %s) ON CONFLICT (id) DO NOTHING", (id, user))
     db.commit()
-    cur.close()          
-    
+    cur.close()
+
 
 @bot.event
 async def on_member_join(member):
@@ -129,7 +122,7 @@ async def on_member_update(before, after):
         if before.nick != after.nick:
             message = f'{after.name} changed their nickname from {before.nick} to {after.nick}'
         elif before.roles != after.roles:
-            result = bot.compare_roles(before.roles, after.roles)
+            result = compare_roles(before.roles, after.roles)
             message = f'{after.name}: {result[0]} role {result[1]}'
         else:
             message = f'{after.name} changed their profile picture or avatar decoration'
@@ -341,7 +334,7 @@ async def gamble(ctx):
     """
     Gambles pings the user the result 
     """
-    result = bot.gambling()
+    result = gambling()
     await ctx.channel.send(f'{ctx.author.mention} {result}')
 
 
@@ -399,6 +392,12 @@ async def positivity(ctx):
     embed = discord.Embed(title='Mood Levels', description=playerdata, color=0x00ff00)
     embed.set_image(url='attachment://hikari_and_nozomi.jpg')
     await ctx.channel.send(file=file, embed=embed)       
+
+
+@bot.command()
+async def record(ctx):
+    if not ctx.author.voice:
+        pass
 
 
 def compare_roles(prev_roles, curr_roles):
