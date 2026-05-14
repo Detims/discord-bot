@@ -2,11 +2,9 @@ import os
 import discord
 from discord.ext import commands
 import random
-from numpy import require
 import psycopg2
 from nltk.sentiment.vader import SentimentIntensityAnalyzer # import this after running the below imports
 from dotenv import load_dotenv
-import time
 from google import genai
 from google.genai import types
 from datetime import datetime, timedelta
@@ -49,8 +47,11 @@ def getSentiment(text):
 intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
+intents.voice_states = True
 
 bot = commands.Bot(command_prefix="$", intents=intents)
+
+connections = {}
 
 @bot.event
 async def on_ready():
@@ -392,12 +393,6 @@ async def positivity(ctx):
     embed = discord.Embed(title='Mood Levels', description=playerdata, color=0x00ff00)
     embed.set_image(url='attachment://hikari_and_nozomi.jpg')
     await ctx.channel.send(file=file, embed=embed)       
-
-
-@bot.command()
-async def record(ctx):
-    if not ctx.author.voice:
-        pass
 
 
 def compare_roles(prev_roles, curr_roles):
