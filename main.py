@@ -1,3 +1,4 @@
+from calendar import c
 import os
 import discord
 from discord.ext import commands
@@ -308,7 +309,7 @@ async def hello(ctx):
     """
     Sends a message to the channel and to the user
     """
-    await ctx.channel.send('Imma touch you lil bro')
+    await ctx.send('Imma touch you lil bro')
     await ctx.author.send('I know where you live')
 
 
@@ -318,7 +319,7 @@ async def image(ctx):
     Sends an image
     """
     file = discord.File('assets/images/hikari_and_nozomi.jpg', filename='hikari_and_nozomi.jpg')
-    await ctx.channel.send(file=file)
+    await ctx.send(file=file)
 
 
 @bot.command()
@@ -327,7 +328,7 @@ async def video(ctx):
     Sends a video
     """
     file = discord.File('assets/videos/apt.mp4', filename='apt.mp4')
-    await ctx.channel.send(file=file)
+    await ctx.send(file=file)
 
 
 @bot.command()
@@ -336,7 +337,7 @@ async def gamble(ctx):
     Gambles pings the user the result 
     """
     result = gambling()
-    await ctx.channel.send(f'{ctx.author.mention} {result}')
+    await ctx.send(f'{ctx.author.mention} {result}')
 
 
 @bot.command()
@@ -364,7 +365,7 @@ async def leaderboard(ctx):
     file = discord.File('assets/images/hikari_and_nozomi.jpg', filename='hikari_and_nozomi.jpg')
     embed = discord.Embed(title='Leaderboard', description=playerdata, color=0x00ff00)
     embed.set_image(url='attachment://hikari_and_nozomi.jpg')
-    await ctx.channel.send(file=file, embed=embed)        
+    await ctx.send(file=file, embed=embed)        
 
 
 @bot.command()
@@ -392,7 +393,7 @@ async def positivity(ctx):
     file = discord.File('assets/images/hikari_and_nozomi.jpg', filename='hikari_and_nozomi.jpg')
     embed = discord.Embed(title='Mood Levels', description=playerdata, color=0x00ff00)
     embed.set_image(url='attachment://hikari_and_nozomi.jpg')
-    await ctx.channel.send(file=file, embed=embed)       
+    await ctx.send(file=file, embed=embed)       
 
 
 def compare_roles(prev_roles, curr_roles):
@@ -411,6 +412,35 @@ def gambling():
     chance_of_win = 1
     random_number = random.randint(1, 100)
     return "WOW!" if random_number <= chance_of_win else "AW DANGIT"
+
+
+@bot.command()
+async def join(ctx):
+    """Joins a voice channel"""
+    voice = ctx.author.voice
+    
+    if not voice:
+        return await ctx.send("You're not in a vc right now")
+
+    vc = await voice.channel.connect()
+    connections.update({ctx.guild.id: vc})
+
+    await ctx.send("Joined voice call")
+
+
+@bot.command()
+async def leave(ctx):
+    """Leaves voice channel"""
+    vc = ctx.voice_client
+
+    if vc:
+        if ctx.guild.id in connections:
+            del connections[ctx.guild.id]
+
+        await vc.disconnect()
+        await ctx.send("Left voice channel")
+    else:
+        await ctx.send("I'm not in a voice call")
 
 
 def main():
