@@ -130,6 +130,8 @@ async def on_member_update(before, after):
             message = f'{after.name} changed their profile picture or avatar decoration'
             attachment = await after.display_avatar.to_file(spoiler = False)
 
+        if not attachment: attachment = None
+
         await channel.send(message, file=attachment)
 
 
@@ -441,6 +443,46 @@ async def leave(ctx):
         await ctx.send("Left voice channel")
     else:
         await ctx.send("I'm not in a voice call")
+
+
+@bot.command()
+async def bestow(ctx):
+    """Bestows upon someone the Prejudice card"""
+    role = [x for x in ctx.guild.roles if x.name == "Prejudice"]
+
+    if not role: 
+        await ctx.send("You are doing this in the wrong place.")
+        return
+
+    if ctx.message.mentions:
+        target = ctx.message.mentions[0]
+        role = role[0]
+
+        users = [user for user in role.members]
+        if users:
+            for user in users:
+                await user.remove_roles(role)
+
+        await target.add_roles(role)
+
+        await ctx.send(f"{target.name} now has the Prejudice card.")
+    else:
+        await ctx.send("No one was mentioned.")
+
+
+@bot.command()
+async def invoke(ctx):
+    """Invokes the role with the Prejudice card"""
+    role = [x for x in ctx.guild.roles if x.name == "Prejudice"]
+
+    if not role: 
+        await ctx.send("You are doing this in the wrong place.")
+        return
+    
+    role = role[0]
+
+    file = discord.File('assets/images/Prejudice.png', filename='Prejudice.png')
+    await ctx.send(role.mention, file=file)
 
 
 def main():
