@@ -1,4 +1,3 @@
-from calendar import c
 import os
 import discord
 from discord.ext import commands
@@ -385,6 +384,34 @@ async def positivity(ctx):
                 GROUP BY users.name
                 HAVING AVG(sentiment) != 0
                 ORDER BY mood DESC;""", (server[0].id,))
+    rows = cur.fetchall()
+    cur.close()
+    memberNames = [member.name for member in server[0].members]
+    playerScores = [name.replace("_", r"\_") + ':\t' + str(points)[:5] for name, points in rows if name in memberNames]
+    if len(playerScores) > LEADERBOARD_MAX:
+        playerScores = playerScores[:LEADERBOARD_MAX]
+    playerdata = '\n'.join(playerScores)
+    file = discord.File('assets/images/hikari_and_nozomi.jpg', filename='hikari_and_nozomi.jpg')
+    embed = discord.Embed(title='Mood Levels', description=playerdata, color=0x00ff00)
+    embed.set_image(url='attachment://hikari_and_nozomi.jpg')
+    await ctx.send(file=file, embed=embed)       
+
+
+@bot.command()
+async def negativity(ctx):
+    """
+    Prints out a leaderboard based on message sentiment in Embed format
+    """
+    server = [guild for guild in bot.guilds if guild.name == ctx.guild.name]
+    cur = db.cursor()
+    cur.execute("""
+                SELECT users.name, AVG(sentiment) AS mood
+                FROM users
+                JOIN messages ON messages.users_id = users.id
+                WHERE servers_id = %s
+                GROUP BY users.name
+                HAVING AVG(sentiment) != 0
+                ORDER BY mood ASC;""", (server[0].id,))
     rows = cur.fetchall()
     cur.close()
     memberNames = [member.name for member in server[0].members]
