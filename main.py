@@ -85,7 +85,7 @@ async def on_member_join(member):
     Updates tables when a user joins a server.
     """
     cur = db.cursor()
-    cur.execute("INSERT INTO servers(id, name) VALUES(%s, %s) ON CONFLICT DO NOTHING", (member.id, member.name))
+    cur.execute("INSERT INTO users(id, name) VALUES(%s, %s) ON CONFLICT DO NOTHING", (member.id, member.name))
     db.commit()
     cur.close()
 
