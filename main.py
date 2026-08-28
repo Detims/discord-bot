@@ -302,6 +302,11 @@ async def on_message(message):
                 channel = bot.get_channel(AUDIT_CHANNEL)
                 await channel.send(f'{message.author} has pinged {TARGET_ROLE} and rolled a {random_number}. {'They have been timed out.' if random_number == 1 else ''}')
 
+    # Automatically fix twitter link embeds
+    if "x.com" in message.content:
+        await message.edit(suppress=True)
+        await message.reply(message.content.replace("x.com", "fxtwitter.com"), mention_author=False)
+
     await bot.process_commands(message)
 
 
