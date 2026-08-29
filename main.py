@@ -1,4 +1,5 @@
 import os
+import asyncio
 import discord
 from discord.ext import commands
 import random
@@ -52,6 +53,117 @@ intents.voice_states = True
 bot = commands.Bot(command_prefix="$", intents=intents)
 
 connections = {}
+active_blackjack_players = set()
+
+BLACKJACK_HIT = '🃏'
+BLACKJACK_STAND = '✋'
+BLACKJACK_CANCEL = '❌'
+BLACKJACK_REPLAY = '🔁'
+BLACKJACK_CONTROLS = (BLACKJACK_HIT, BLACKJACK_STAND, BLACKJACK_CANCEL)
+BLACKJACK_SUITS = ('♠️', '♥️', '♦️', '♣️')
+BLACKJACK_RANKS = ('2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A')
+
+
+def create_blackjack_deck():
+    """Creates and shuffles a standard 52-card deck."""
+    deck = [(rank, suit) for suit in BLACKJACK_SUITS for rank in BLACKJACK_RANKS]
+    random.shuffle(deck)
+    return deck
+
+
+def blackjack_hand_value(hand):
+    """Returns the best blackjack value for a hand and whether it is soft."""
+    total = 0
+    aces = 0
+
+    for rank, _ in hand:
+        if rank == 'A':
+            total += 11
+            aces += 1
+        elif rank in {'J', 'Q', 'K'}:
+            total += 10
+        else:
+            total += int(rank)
+
+    reduced_aces = 0
+    while total > 21 and reduced_aces < aces:
+        total -= 10
+        reduced_aces += 1
+
+    is_soft = aces > reduced_aces
+    return total, is_soft
+
+
+def format_blackjack_hand(hand, hide_after_first=False):
+    """Formats cards for display in a Discord embed."""
+    if hide_after_first:
+        hidden_cards = ['🂠'] * (len(hand) - 1)
+        cards = [f'{hand[0][0]}{hand[0][1]}', *hidden_cards]
+    else:
+        cards = [f'{rank}{suit}' for rank, suit in hand]
+
+    return '  '.join(cards)
+
+
+def create_blackjack_embed(
+    player,
+    player_hand,
+    dealer_hand,
+    status,
+    *,
+    reveal_dealer=False,
+    finished=False,
+    replay_available=False,
+    color=0x3498DB,
+):
+    """Builds the current blackjack table as a Discord embed."""
+    player_total, player_is_soft = blackjack_hand_value(player_hand)
+    player_score = f'{player_total}{" (soft)" if player_is_soft else ""}'
+
+    if reveal_dealer:
+        dealer_total, dealer_is_soft = blackjack_hand_value(dealer_hand)
+        dealer_score = f'{dealer_total}{" (soft)" if dealer_is_soft else ""}'
+    else:
+        dealer_score = '?'
+
+    embed = discord.Embed(title='🃏 Blackjack', description=status, color=color)
+    embed.set_author(name=f'{player.display_name}\'s table', icon_url=player.display_avatar.url)
+    embed.add_field(
+        name=f'Dealer — {dealer_score}',
+        value=format_blackjack_hand(dealer_hand, hide_after_first=not reveal_dealer),
+        inline=False,
+    )
+    embed.add_field(
+        name=f'You — {player_score}',
+        value=format_blackjack_hand(player_hand),
+        inline=False,
+    )
+
+    if replay_available:
+        embed.set_footer(text=f'{BLACKJACK_REPLAY} Play again (available for two minutes)')
+    elif finished:
+        embed.set_footer(text='Game over. Start another with $blackjack.')
+    else:
+        embed.set_footer(text=f'{BLACKJACK_HIT} Hit   {BLACKJACK_STAND} Stand   {BLACKJACK_CANCEL} Cancel')
+
+    return embed
+
+
+def resolve_blackjack(player_hand, dealer_hand):
+    """Returns the final status message and embed color."""
+    player_total, _ = blackjack_hand_value(player_hand)
+    dealer_total, _ = blackjack_hand_value(dealer_hand)
+
+    if player_total > 21:
+        return 'Bust! The dealer wins.', 0xE74C3C
+    if dealer_total > 21:
+        return 'The dealer busts. You win!', 0x2ECC71
+    if player_total > dealer_total:
+        return 'You beat the dealer!', 0x2ECC71
+    if player_total < dealer_total:
+        return 'The dealer wins.', 0xE74C3C
+    return 'Push. You and the dealer tie.', 0xF1C40F
+
 
 @bot.event
 async def on_ready():
@@ -344,6 +456,224 @@ async def gamble(ctx):
     """
     result = gambling()
     await ctx.send(f'{ctx.author.mention} {result}')
+
+
+async def wait_for_blackjack_replay(game_message, player_id, final_embed):
+    """Waits for the current player to request a fresh blackjack session."""
+    try:
+        await game_message.add_reaction(BLACKJACK_REPLAY)
+    except (discord.Forbidden, discord.HTTPException):
+        final_embed.set_footer(text='Start another game with $blackjack.')
+        await game_message.edit(embed=final_embed)
+        return False
+
+    def replay_check(reaction, user):
+        return (
+            user.id == player_id
+            and reaction.message.id == game_message.id
+            and str(reaction.emoji) == BLACKJACK_REPLAY
+        )
+
+    try:
+        reaction, user = await bot.wait_for(
+            'reaction_add',
+            timeout=120.0,
+            check=replay_check,
+        )
+    except asyncio.TimeoutError:
+        final_embed.set_footer(text='Replay expired. Start another game with $blackjack.')
+        await game_message.edit(embed=final_embed)
+        return False
+
+    try:
+        await reaction.remove(user)
+    except (discord.Forbidden, discord.HTTPException):
+        pass
+
+    final_embed.set_footer(text='Replay accepted. Your new game is below.')
+    await game_message.edit(embed=final_embed)
+    return True
+
+
+async def finish_blackjack_session(ctx, game_message, player_hand, dealer_hand, status, color):
+    """Displays a completed hand and offers the player a replay."""
+    final_embed = create_blackjack_embed(
+        ctx.author,
+        player_hand,
+        dealer_hand,
+        status,
+        reveal_dealer=True,
+        finished=True,
+        replay_available=True,
+        color=color,
+    )
+    await game_message.edit(embed=final_embed)
+    return await wait_for_blackjack_replay(game_message, ctx.author.id, final_embed)
+
+
+async def play_blackjack_session(ctx):
+    """Runs one blackjack hand and returns whether the player requested a replay."""
+    player_id = ctx.author.id
+    deck = create_blackjack_deck()
+    player_hand = [deck.pop(), deck.pop()]
+    dealer_hand = [deck.pop(), deck.pop()]
+
+    player_total, _ = blackjack_hand_value(player_hand)
+    dealer_total, _ = blackjack_hand_value(dealer_hand)
+    player_blackjack = player_total == 21
+    dealer_blackjack = dealer_total == 21
+
+    if player_blackjack:
+        if dealer_blackjack:
+            status, color = 'Double blackjack. Push!', 0xF1C40F
+        else:
+            status, color = 'Blackjack! You win!', 0x2ECC71
+
+        final_embed = create_blackjack_embed(
+            ctx.author,
+            player_hand,
+            dealer_hand,
+            status,
+            reveal_dealer=True,
+            finished=True,
+            replay_available=True,
+            color=color,
+        )
+        game_message = await ctx.send(embed=final_embed)
+        return await wait_for_blackjack_replay(game_message, player_id, final_embed)
+
+    embed = create_blackjack_embed(
+        ctx.author,
+        player_hand,
+        dealer_hand,
+        'Choose whether to hit or stand.',
+    )
+    game_message = await ctx.send(embed=embed)
+
+    try:
+        for control in BLACKJACK_CONTROLS:
+            await game_message.add_reaction(control)
+    except (discord.Forbidden, discord.HTTPException):
+        embed = create_blackjack_embed(
+            ctx.author,
+            player_hand,
+            dealer_hand,
+            'I could not add the game controls. Check my reaction permissions.',
+            reveal_dealer=True,
+            finished=True,
+            color=0xE74C3C,
+        )
+        await game_message.edit(embed=embed)
+        return False
+
+    def reaction_check(reaction, user):
+        return (
+            user.id == player_id
+            and reaction.message.id == game_message.id
+            and str(reaction.emoji) in BLACKJACK_CONTROLS
+        )
+
+    while True:
+        try:
+            reaction, user = await bot.wait_for(
+                'reaction_add',
+                timeout=120.0,
+                check=reaction_check,
+            )
+        except asyncio.TimeoutError:
+            embed = create_blackjack_embed(
+                ctx.author,
+                player_hand,
+                dealer_hand,
+                'Game expired after two minutes of inactivity.',
+                reveal_dealer=True,
+                finished=True,
+                color=0x95A5A6,
+            )
+            await game_message.edit(embed=embed)
+            return False
+
+        try:
+            await reaction.remove(user)
+        except (discord.Forbidden, discord.HTTPException):
+            # Without Manage Messages, the player can manually remove a
+            # reaction before selecting the same action again.
+            pass
+
+        selected_control = str(reaction.emoji)
+
+        if selected_control == BLACKJACK_CANCEL:
+            embed = create_blackjack_embed(
+                ctx.author,
+                player_hand,
+                dealer_hand,
+                'Game cancelled.',
+                reveal_dealer=True,
+                finished=True,
+                color=0x95A5A6,
+            )
+            await game_message.edit(embed=embed)
+            return False
+
+        if selected_control == BLACKJACK_HIT:
+            player_hand.append(deck.pop())
+            player_total, _ = blackjack_hand_value(player_hand)
+
+            if player_total > 21:
+                status, color = resolve_blackjack(player_hand, dealer_hand)
+                return await finish_blackjack_session(
+                    ctx,
+                    game_message,
+                    player_hand,
+                    dealer_hand,
+                    status,
+                    color,
+                )
+
+            if player_total < 21:
+                embed = create_blackjack_embed(
+                    ctx.author,
+                    player_hand,
+                    dealer_hand,
+                    'Card drawn. Hit again or stand.',
+                )
+                await game_message.edit(embed=embed)
+                continue
+
+        if dealer_blackjack:
+            status, color = 'The dealer reveals blackjack.', 0xE74C3C
+        else:
+            while blackjack_hand_value(dealer_hand)[0] < 17:
+                dealer_hand.append(deck.pop())
+            status, color = resolve_blackjack(player_hand, dealer_hand)
+
+        return await finish_blackjack_session(
+            ctx,
+            game_message,
+            player_hand,
+            dealer_hand,
+            status,
+            color,
+        )
+
+
+@bot.command(aliases=['bj'])
+async def blackjack(ctx):
+    """Starts a single-player blackjack game controlled by reactions."""
+    player_id = ctx.author.id
+
+    if player_id in active_blackjack_players:
+        await ctx.send('You already have a blackjack game in progress.')
+        return
+
+    active_blackjack_players.add(player_id)
+
+    try:
+        replay_requested = True
+        while replay_requested:
+            replay_requested = await play_blackjack_session(ctx)
+    finally:
+        active_blackjack_players.discard(player_id)
 
 
 @bot.command()
